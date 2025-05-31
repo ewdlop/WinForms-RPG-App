@@ -177,6 +177,12 @@ namespace WinFormsApp1
             settingsMenu.DropDownItems.Add("&Font Size", null, ShowFontSettings);
             settingsMenu.DropDownItems.Add("&Game Settings", null, ShowGameSettings);
 
+            // Tools menu (new)
+            ToolStripMenuItem toolsMenu = new ToolStripMenuItem("&Tools");
+            toolsMenu.DropDownItems.Add("&Asset Editor", null, ShowAssetEditor);
+            toolsMenu.DropDownItems.Add(new ToolStripSeparator());
+            toolsMenu.DropDownItems.Add("&Data Validation", null, ShowDataValidation);
+
             // Help menu
             ToolStripMenuItem helpMenu = new ToolStripMenuItem("&Help");
             helpMenu.DropDownItems.Add("&Commands", null, (s, e) => gameEngine.ShowHelp());
@@ -185,7 +191,7 @@ namespace WinFormsApp1
             helpMenu.DropDownItems.Add("&About", null, ShowAbout);
 
             menuStrip.Items.AddRange(new ToolStripItem[] {
-                gameMenu, characterMenu, worldMenu, settingsMenu, helpMenu
+                gameMenu, characterMenu, worldMenu, settingsMenu, toolsMenu, helpMenu
             });
         }
 
@@ -672,6 +678,32 @@ namespace WinFormsApp1
                 "• Multiple themes\n\n" +
                 "Created with ❤️ for RPG enthusiasts",
                 "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ShowAssetEditor(object sender, EventArgs e)
+        {
+            try
+            {
+                AssetEditorForm.ShowAssetEditor();
+                DisplayText("Asset Editor opened. You can now edit game data files.", Color.Cyan);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening Asset Editor:\n{ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ShowDataValidation(object sender, EventArgs e)
+        {
+            MessageBox.Show("Data Validation Tool\n\n" +
+                "This feature validates the integrity of your game data files:\n\n" +
+                "• Checks JSON syntax\n" +
+                "• Validates data relationships\n" +
+                "• Reports missing or invalid entries\n" +
+                "• Suggests fixes for common issues\n\n" +
+                "Feature coming soon in future update!",
+                "Data Validation", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         // Update the UpdateStatus method to work with new UI elements
