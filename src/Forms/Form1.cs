@@ -9,21 +9,18 @@ namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
-        private RichTextBox gameTextBox;
-        private TextBox inputTextBox;
-        private Button submitButton;
+        // Replace individual controls with custom controls
+        private GameTextDisplayControl gameTextDisplayControl;
+        private GameInputControl gameInputControl;
         private MenuStrip menuStrip;
-        private StatusStrip statusStrip;
-        private ToolStripStatusLabel statusLabel;
+        private GameStatusBarControl gameStatusBarControl;
         private GameEngine gameEngine;
         private ToolStrip toolStrip;
         private Panel sidePanel;
         private CharacterStatsControl characterStatsControl;
         private ProgressDisplayControl progressDisplayControl;
         private QuickActionsControl quickActionsControl;
-        private GroupBox miniMapPanel;
-        private Button quickInventoryButton;
-        private Button quickMapButton;
+        private MiniMapControl miniMapControl;
 
         // UI elements that should be disabled until game starts
         private List<Control> gameRequiredControls;
@@ -61,7 +58,7 @@ namespace WinFormsApp1
             // Create toolbar
             CreateToolStrip();
 
-            // Create main game panel
+            // Create main game panel using custom controls
             Panel gamePanel = CreateGamePanel();
             mainLayout.Controls.Add(gamePanel, 0, 0);
 
@@ -76,7 +73,7 @@ namespace WinFormsApp1
             this.Controls.Add(mainLayout);
             this.Controls.Add(toolStrip);
             this.Controls.Add(menuStrip);
-            this.Controls.Add(statusStrip);
+            this.Controls.Add(gameStatusBarControl);
 
             // Set up keyboard shortcuts
             SetupKeyboardShortcuts();
@@ -88,7 +85,7 @@ namespace WinFormsApp1
             InitializeGameStateControls();
 
             // Set focus to input
-            inputTextBox.Focus();
+            gameInputControl.FocusInput();
         }
 
         private void InitializeGameStateControls()
@@ -131,19 +128,10 @@ namespace WinFormsApp1
                 }
             }
 
-            // Manage quick action buttons through custom control
-            if (quickActionsControl != null)
-            {
-                quickActionsControl.SetButtonsEnabled(enabled, "Stats", "Save", "Load");
-            }
-
-            // Manage mini-map buttons
-            if (quickInventoryButton != null) quickInventoryButton.Enabled = enabled;
-            if (quickMapButton != null) quickMapButton.Enabled = enabled;
-
-            // Enable/disable input controls
-            if (inputTextBox != null) inputTextBox.Enabled = enabled;
-            if (submitButton != null) submitButton.Enabled = enabled;
+            // Manage custom controls
+            gameInputControl.InputEnabled = enabled;
+            quickActionsControl?.SetButtonsEnabled(enabled, "Stats", "Save", "Load");
+            miniMapControl?.SetMapEnabled(enabled);
         }
 
         private void CreateMenuStrip()
@@ -279,94 +267,26 @@ namespace WinFormsApp1
             gameLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 85F));
             gameLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 15F));
 
-            // Game text display
-            gameTextBox = new RichTextBox
+            // Game text display using custom control
+            gameTextDisplayControl = new GameTextDisplayControl
             {
-                Dock = DockStyle.Fill,
-                ReadOnly = true,
-                BackColor = Color.Black,
-                ForeColor = Color.White,
-                Font = new Font("Consolas", 10),
-                ScrollBars = RichTextBoxScrollBars.Vertical
+                Dock = DockStyle.Fill
             };
+            gameTextDisplayControl.ClearRequested += (s, e) => gameEngine?.ProcessCommand("clear");
+            gameLayout.Controls.Add(gameTextDisplayControl, 0, 0);
 
-            // Input panel
-            Panel inputPanel = CreateInputPanel();
+            // Input panel using custom control
+            gameInputControl = new GameInputControl
+            {
+                Dock = DockStyle.Fill
+            };
+            gameInputControl.CommandSubmitted += GameInputControl_CommandSubmitted;
+            gameInputControl.InventoryRequested += (s, e) => ShowInventory(s, e);
+            gameInputControl.HelpRequested += (s, e) => gameEngine?.ShowHelp();
+            gameLayout.Controls.Add(gameInputControl, 0, 1);
 
-            gameLayout.Controls.Add(gameTextBox, 0, 0);
-            gameLayout.Controls.Add(inputPanel, 0, 1);
             gamePanel.Controls.Add(gameLayout);
-
             return gamePanel;
-        }
-
-        private Panel CreateInputPanel()
-        {
-            Panel inputPanel = new Panel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(5)
-            };
-
-            TableLayoutPanel inputLayout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 3,
-                RowCount = 2
-            };
-            inputLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
-            inputLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15F));
-            inputLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15F));
-            inputLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            inputLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-
-            // Command input
-            inputTextBox = new TextBox
-            {
-                Dock = DockStyle.Fill,
-                Font = new Font("Consolas", 10),
-                PlaceholderText = "Enter command..."
-            };
-            inputTextBox.KeyDown += InputTextBox_KeyDown;
-
-            // Submit button
-            submitButton = new Button
-            {
-                Text = "Submit",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkBlue,
-                ForeColor = Color.White
-            };
-            submitButton.Click += SubmitButton_Click;
-
-            // Quick inventory button
-            quickInventoryButton = new Button
-            {
-                Text = "Inventory",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkGreen,
-                ForeColor = Color.White
-            };
-            quickInventoryButton.Click += ShowInventory;
-
-            // Command history label
-            Label historyLabel = new Label
-            {
-                Text = "Use ↑↓ for command history",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                ForeColor = Color.Gray,
-                Font = new Font("Arial", 8)
-            };
-
-            inputLayout.Controls.Add(inputTextBox, 0, 0);
-            inputLayout.Controls.Add(submitButton, 1, 0);
-            inputLayout.Controls.Add(quickInventoryButton, 2, 0);
-            inputLayout.SetColumnSpan(historyLabel, 3);
-            inputLayout.Controls.Add(historyLabel, 0, 1);
-
-            inputPanel.Controls.Add(inputLayout);
-            return inputPanel;
         }
 
         private void CreateSidePanel()
@@ -419,9 +339,21 @@ namespace WinFormsApp1
             progressGroup.Controls.Add(progressDisplayControl);
             sideLayout.Controls.Add(progressGroup, 0, 1);
 
-            // Mini map panel
-            CreateMiniMapPanel();
-            sideLayout.Controls.Add(miniMapPanel, 0, 2);
+            // Mini map panel using custom control
+            GroupBox miniMapGroup = new GroupBox
+            {
+                Text = "Mini Map",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(5)
+            };
+            miniMapControl = new MiniMapControl
+            {
+                Dock = DockStyle.Fill
+            };
+            miniMapControl.FullMapRequested += (s, e) => ShowMap(s, e);
+            miniMapControl.LocationClicked += MiniMapControl_LocationClicked;
+            miniMapGroup.Controls.Add(miniMapControl);
+            sideLayout.Controls.Add(miniMapGroup, 0, 2);
 
             // Quick actions panel using custom control
             GroupBox actionsGroup = new GroupBox
@@ -441,44 +373,12 @@ namespace WinFormsApp1
             sidePanel.Controls.Add(sideLayout);
         }
 
-        private void CreateMiniMapPanel()
-        {
-            miniMapPanel = new GroupBox
-            {
-                Text = "Mini Map",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkGreen,
-                Padding = new Padding(5)
-            };
-
-            Label mapLabel = new Label
-            {
-                Text = "Click 'Map' for full view",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.White,
-                BackColor = Color.DarkGreen
-            };
-
-            quickMapButton = new Button
-            {
-                Text = "Open Map",
-                Dock = DockStyle.Bottom,
-                Height = 30,
-                BackColor = Color.Green,
-                ForeColor = Color.White
-            };
-            quickMapButton.Click += ShowMap;
-
-            miniMapPanel.Controls.Add(mapLabel);
-            miniMapPanel.Controls.Add(quickMapButton);
-        }
-
         private void CreateStatusStrip()
         {
-            statusStrip = new StatusStrip();
-            statusLabel = new ToolStripStatusLabel("Ready to start your adventure...");
-            statusStrip.Items.Add(statusLabel);
+            gameStatusBarControl = new GameStatusBarControl
+            {
+                Dock = DockStyle.Bottom
+            };
         }
 
         private void SetupKeyboardShortcuts()
@@ -524,6 +424,18 @@ namespace WinFormsApp1
                     e.Handled = true;
                     break;
             }
+        }
+
+        // Event handlers for custom controls
+        private void GameInputControl_CommandSubmitted(object sender, string command)
+        {
+            DisplayText($"> {command}", Color.Yellow);
+            gameEngine.ProcessCommand(command);
+        }
+
+        private void MiniMapControl_LocationClicked(object sender, string location)
+        {
+            DisplayText($"You want to travel to {location}. Use movement commands to get there.", Color.Cyan);
         }
 
         // Event handlers for new features
@@ -609,11 +521,10 @@ namespace WinFormsApp1
         {
             using (FontDialog fontDialog = new FontDialog())
             {
-                fontDialog.Font = gameTextBox.Font;
+                fontDialog.Font = gameTextDisplayControl.GetFont();
                 if (fontDialog.ShowDialog() == DialogResult.OK)
                 {
-                    gameTextBox.Font = fontDialog.Font;
-                    inputTextBox.Font = fontDialog.Font;
+                    gameTextDisplayControl.SetFont(fontDialog.Font);
                 }
             }
         }
@@ -637,9 +548,8 @@ namespace WinFormsApp1
                     // Apply font size if changed
                     if (newSettings.FontSize != currentSettings.FontSize)
                     {
-                        var newFont = new Font(gameTextBox.Font.FontFamily, newSettings.FontSize);
-                        gameTextBox.Font = newFont;
-                        inputTextBox.Font = newFont;
+                        var newFont = new Font(gameTextDisplayControl.GetFont().FontFamily, newSettings.FontSize);
+                        gameTextDisplayControl.SetFont(newFont);
                     }
                     
                     DisplayText("Settings applied successfully!", Color.Green);
@@ -709,13 +619,7 @@ namespace WinFormsApp1
         // Update the UpdateStatus method to work with new UI elements
         public void UpdateStatus(string status)
         {
-            if (statusLabel.Owner.InvokeRequired)
-            {
-                statusLabel.Owner.Invoke(new Action(() => UpdateStatus(status)));
-                return;
-            }
-
-            statusLabel.Text = status;
+            gameStatusBarControl?.UpdateStatus(status);
             
             // Update progress bars and stats if we have access to player data
             try
@@ -723,137 +627,63 @@ namespace WinFormsApp1
                 var player = gameEngine.GetPlayer();
                 if (player != null)
                 {
+                    // Update status bar with player stats
+                    gameStatusBarControl?.UpdatePlayerStats(player);
+
                     // Update progress display using custom control
                     progressDisplayControl?.UpdateProgress(player);
 
                     // Update character stats using custom control
                     characterStatsControl?.UpdateStats(player);
+
+                    // Update mini-map with current location
+                    string currentLocationKey = gameEngine.GetCurrentLocationKey();
+                    if (!string.IsNullOrEmpty(currentLocationKey))
+                    {
+                        miniMapControl?.UpdateCurrentLocation(currentLocationKey);
+                        
+                        // Update status bar location
+                        var locations = gameEngine.GetLocations();
+                        if (locations.ContainsKey(currentLocationKey))
+                        {
+                            gameStatusBarControl?.UpdateLocation(locations[currentLocationKey].Name);
+                        }
+                    }
                 }
                 else
                 {
                     // Clear stats when no player is available
+                    gameStatusBarControl?.ClearPlayerStats();
                     progressDisplayControl?.ClearProgress();
                     characterStatsControl?.ClearStats();
+                    miniMapControl?.ClearVisitedLocations();
                 }
             }
             catch
             {
                 // Player not available yet - clear the displays
+                gameStatusBarControl?.ClearPlayerStats();
                 progressDisplayControl?.ClearProgress();
                 characterStatsControl?.ClearStats();
+                miniMapControl?.ClearVisitedLocations();
             }
         }
 
         public void ClearScreen()
         {
-            if (gameTextBox.InvokeRequired)
-            {
-                gameTextBox.Invoke(new Action(ClearScreen));
-                return;
-            }
-            gameTextBox.Clear();
-        }
-
-        private void InputTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                ProcessInput();
-                e.Handled = true;
-            }
-            else if (e.KeyCode == Keys.Tab)
-            {
-                gameEngine.ShowInventory();
-                e.Handled = true;
-            }
-            else if (e.Control && e.KeyCode == Keys.S)
-            {
-                gameEngine.SaveGame();
-                e.Handled = true;
-            }
-            else if (e.Control && e.KeyCode == Keys.L)
-            {
-                gameEngine.LoadGame();
-                e.Handled = true;
-            }
-            else if (e.KeyCode == Keys.F1)
-            {
-                gameEngine.ShowHelp();
-                e.Handled = true;
-            }
-        }
-
-        private void SubmitButton_Click(object sender, EventArgs e)
-        {
-            ProcessInput();
-        }
-
-        private void ProcessInput()
-        {
-            string input = inputTextBox.Text.Trim();
-            if (!string.IsNullOrEmpty(input))
-            {
-                DisplayText($"> {input}", Color.Yellow);
-                gameEngine.ProcessCommand(input);
-                inputTextBox.Clear();
-            }
+            gameTextDisplayControl?.ClearText();
         }
 
         public void DisplayText(string text, Color? color = null)
         {
-            if (gameTextBox.InvokeRequired)
-            {
-                gameTextBox.Invoke(new Action(() => DisplayText(text, color)));
-                return;
-            }
-
-            gameTextBox.SelectionStart = gameTextBox.TextLength;
-            gameTextBox.SelectionLength = 0;
-            gameTextBox.SelectionColor = color ?? Color.LimeGreen;
-            gameTextBox.AppendText(text + Environment.NewLine);
-            gameTextBox.ScrollToCaret();
-        }
-
-        private void ChangeTheme()
-        {
-            using (var themeDialog = new ThemeSelectionDialog())
-            {
-                if (themeDialog.ShowDialog() == DialogResult.OK)
-                {
-                    ApplyTheme(themeDialog.SelectedTheme);
-                }
-            }
+            gameTextDisplayControl?.DisplayText(text, color);
         }
 
         private void ApplyTheme(string themeName)
         {
-            switch (themeName.ToLower())
-            {
-                case "classic":
-                    gameTextBox.BackColor = Color.Black;
-                    gameTextBox.ForeColor = Color.LimeGreen;
-                    break;
-                case "modern":
-                    gameTextBox.BackColor = Color.White;
-                    gameTextBox.ForeColor = Color.Black;
-                    break;
-                case "fantasy":
-                    gameTextBox.BackColor = Color.DarkSlateBlue;
-                    gameTextBox.ForeColor = Color.Gold;
-                    break;
-                case "dark":
-                    gameTextBox.BackColor = Color.DarkGray;
-                    gameTextBox.ForeColor = Color.White;
-                    break;
-                case "high contrast":
-                    gameTextBox.BackColor = Color.Black;
-                    gameTextBox.ForeColor = Color.Yellow;
-                    break;
-                default:
-                    gameTextBox.BackColor = Color.Black;
-                    gameTextBox.ForeColor = Color.LimeGreen;
-                    break;
-            }
+            // Apply theme to custom controls
+            gameTextDisplayControl?.ApplyTheme(themeName);
+            gameInputControl?.ApplyTheme(themeName);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -912,6 +742,26 @@ namespace WinFormsApp1
                     this.Close();
                     break;
             }
+        }
+
+        public void SetCombatMode(bool inCombat)
+        {
+            gameStatusBarControl?.SetCombatMode(inCombat);
+        }
+
+        public void ShowExperienceGain(int expGained)
+        {
+            gameStatusBarControl?.ShowExperienceGain(expGained);
+        }
+
+        public void ShowLevelUp(int oldLevel, int newLevel)
+        {
+            gameStatusBarControl?.ShowExperienceGain(0, newLevel);
+        }
+
+        public void ShowGoldChange(int goldChange)
+        {
+            gameStatusBarControl?.ShowGoldChange(goldChange);
         }
     }
 }

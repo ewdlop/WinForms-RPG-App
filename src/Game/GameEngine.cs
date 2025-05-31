@@ -82,40 +82,25 @@ namespace WinFormsApp1
 
         public void StartNewGame()
         {
-            gameForm.ClearScreen();
-            gameForm.DisplayText("=== Welcome to the Realm of Aethermoor ===", Color.Cyan);
-            gameForm.DisplayText("");
-            gameForm.DisplayText("In this mystical land, legends are forged through courage and wisdom.");
-            gameForm.DisplayText("Your adventure begins now...");
-            gameForm.DisplayText("");
-
-            CreateCharacter();
-            currentLocation = locations["village"];
-            HasUnsavedChanges = false;
-            
-            // Enable game controls now that a game has started
-            gameForm.EnableGameControls(true);
-            
-            ShowLocation();
-            gameForm.UpdateStatus($"Health: {player.Health}/{player.MaxHealth} | Level: {player.Level} | Gold: {player.Gold}");
-        }
-
-        private void CreateCharacter()
-        {
-            using (var characterDialog = new CharacterCreationDialog(dataLoader))
+            using (var characterDialog = new CharacterCreationDialog())
             {
                 if (characterDialog.ShowDialog() == DialogResult.OK)
                 {
-                    player = characterDialog.CreatedCharacter;
-                    gameForm.DisplayText($"Welcome, {player.Name} the {player.CharacterClass}!", Color.Yellow);
-                    gameForm.DisplayText("");
-                }
-                else
-                {
-                    // Default character if dialog is cancelled
-                    player = dataLoader.CreatePlayerFromClass("Hero", "Warrior");
-                    gameForm.DisplayText("Welcome, Hero the Warrior!", Color.Yellow);
-                    gameForm.DisplayText("");
+                    player = characterDialog.CreatedPlayer;
+                    currentLocation = locations["village"];
+                    
+                    // Enable game controls now that we have a player
+                    gameForm.EnableGameControls(true);
+                    
+                    DisplayMessage("=== Welcome to the Realm of Aethermoor ===");
+                    DisplayMessage($"Welcome, {player.Name} the {player.CharacterClass}!");
+                    DisplayMessage("Your adventure begins in the peaceful village of Elderbrook.");
+                    DisplayMessage("Type 'help' for a list of commands, or 'look' to examine your surroundings.");
+                    DisplayMessage("");
+                    
+                    ShowLocation();
+                    UpdateCharacterDisplay();
+                    HasUnsavedChanges = true;
                 }
             }
         }
@@ -432,10 +417,15 @@ namespace WinFormsApp1
         {
             isInCombat = true;
             currentEnemy = enemy;
-            gameForm.DisplayText($"=== Combat with {enemy.Name} ===", Color.Red);
-            gameForm.DisplayText($"{enemy.Name}: {enemy.Health}/{enemy.MaxHealth} HP");
-            gameForm.DisplayText("Commands: attack, defend, use [item], flee");
-            gameForm.DisplayText("");
+            DisplayMessage($"A {enemy.Name} appears! Combat begins!", Color.Red);
+            DisplayMessage($"Enemy Health: {enemy.Health}/{enemy.MaxHealth}", Color.Orange);
+            DisplayMessage("Commands: attack, defend, use [item], flee", Color.Yellow);
+            
+            // Set combat mode in status bar
+            if (gameForm is Form1 form1)
+            {
+                form1.SetCombatMode(true);
+            }
         }
 
         private void PerformAttack()
@@ -495,28 +485,36 @@ namespace WinFormsApp1
 
         private void WinCombat()
         {
-            int expGained = currentEnemy.Level * 10;
-            int goldGained = random.Next(5, 20) * currentEnemy.Level;
-
-            gameForm.DisplayText($"You defeated {currentEnemy.Name}!", Color.Green);
-            gameForm.DisplayText($"You gain {expGained} experience and {goldGained} gold!", Color.Yellow);
-
+            int expGained = currentEnemy.Level * 25;
+            int goldGained = random.Next(10, 30) * currentEnemy.Level;
+            
+            DisplayMessage($"You defeated the {currentEnemy.Name}!", Color.Green);
+            DisplayMessage($"You gained {expGained} experience and {goldGained} gold!", Color.Yellow);
+            
             player.Experience += expGained;
             player.Gold += goldGained;
 
-            // Handle loot drops
-            HandleLootDrops();
-
-            // Remove enemy from location
-            currentLocation.Enemies.Remove(currentEnemy);
-
-            // Check for level up
-            if (player.Experience >= player.ExperienceToNextLevel)
+            // Show experience and gold gain in status bar
+            if (gameForm is Form1 form1)
             {
-                LevelUp();
+                form1.ShowExperienceGain(expGained);
+                form1.ShowGoldChange(goldGained);
             }
 
+            // Check for level up
+            bool leveledUp = false;
+            while (player.Experience >= player.ExperienceToNextLevel)
+            {
+                player.Experience -= player.ExperienceToNextLevel;
+                LevelUp();
+                leveledUp = true;
+            }
+
+            // Handle loot drops
+            HandleLootDrops();
+            
             EndCombat();
+            UpdateCharacterDisplay();
         }
 
         private void HandleLootDrops()
@@ -544,26 +542,39 @@ namespace WinFormsApp1
         {
             isInCombat = false;
             currentEnemy = null;
+            
+            // Clear combat mode in status bar
+            if (gameForm is Form1 form1)
+            {
+                form1.SetCombatMode(false);
+            }
         }
 
         private void LevelUp()
         {
+            int oldLevel = player.Level;
             player.Level++;
-            player.ExperienceToNextLevel = 100 + (player.Level * 50); // Exponential experience requirement
-            
-            // Increase stats on level up
             player.MaxHealth += 10;
             player.Health = player.MaxHealth; // Full heal on level up
             player.Attack += 2;
             player.Defense += 1;
-            
-            // Award skill points
-            player.SkillPoints += 5; // 5 skill points per level
-            
-            gameForm.DisplayText($"Level up! You are now level {player.Level}!", Color.Magenta);
-            gameForm.DisplayText("Your stats have increased!", Color.Magenta);
-            gameForm.DisplayText($"You gained 5 skill points! (Total: {player.SkillPoints})", Color.Magenta);
-            gameForm.DisplayText("Use 'skills' command to spend your skill points.", Color.Cyan);
+            player.SkillPoints += 5; // Award skill points
+            player.ExperienceToNextLevel = player.Level * 100;
+
+            DisplayMessage($"🎉 LEVEL UP! You are now level {player.Level}!", Color.Gold);
+            DisplayMessage($"Health increased to {player.MaxHealth}!", Color.Green);
+            DisplayMessage($"Attack increased to {player.Attack}!", Color.Green);
+            DisplayMessage($"Defense increased to {player.Defense}!", Color.Green);
+            DisplayMessage($"You gained 5 skill points! Use 'skills' to spend them.", Color.Cyan);
+            DisplayMessage("");
+
+            // Show level up notification in status bar
+            if (gameForm is Form1 form1)
+            {
+                form1.ShowLevelUp(oldLevel, player.Level);
+            }
+
+            UpdateCharacterDisplay();
         }
 
         public void ShowHelp()
@@ -633,49 +644,129 @@ namespace WinFormsApp1
         {
             try
             {
-                // Handle default save name
-                if (string.IsNullOrEmpty(saveName) || saveName == "quicksave")
+                string saveDirectory = GetSaveDirectory();
+                if (!Directory.Exists(saveDirectory))
                 {
-                    saveName = "QuickSave";
-                }
-
-                string saveFilePath = GetSaveFilePath(saveName);
-                
-                if (!File.Exists(saveFilePath))
-                {
-                    gameForm.DisplayText($"Save file '{saveName}' not found.", Color.Red);
-                    gameForm.DisplayText($"Looked in: {saveFilePath}", Color.Gray);
+                    DisplayMessage("No saved games found.", Color.Red);
                     return;
                 }
 
-                string saveJson = File.ReadAllText(saveFilePath);
-                var saveData = JsonSerializer.Deserialize<GameSave>(saveJson);
+                var saveFiles = Directory.GetFiles(saveDirectory, "*.json")
+                    .Select(f => Path.GetFileNameWithoutExtension(f))
+                    .ToArray();
 
-                if (saveData?.Player != null && saveData.Locations != null && !string.IsNullOrEmpty(saveData.CurrentLocationKey))
+                if (saveFiles.Length == 0)
                 {
-                    player = saveData.Player;
-                    locations = saveData.Locations;
-                    currentLocation = locations[saveData.CurrentLocationKey];
+                    DisplayMessage("No saved games found.", Color.Red);
+                    return;
+                }
 
-                    gameForm.ClearScreen();
-                    gameForm.DisplayText($"Game loaded from '{saveName}'.", Color.Green);
-                    gameForm.DisplayText($"Loaded from: {saveFilePath}", Color.Gray);
-                    gameForm.DisplayText("");
-                    
-                    // Enable game controls since we now have a loaded game
-                    gameForm.EnableGameControls(true);
-                    
-                    ShowLocation();
-                    HasUnsavedChanges = false;
-                }
-                else
+                // If no save name provided, show selection dialog
+                if (string.IsNullOrEmpty(saveName))
                 {
-                    gameForm.DisplayText("Save file is corrupted or invalid.", Color.Red);
+                    saveName = ShowSaveFileDialog(saveFiles, "Load Game");
+                    if (string.IsNullOrEmpty(saveName))
+                        return;
                 }
+
+                string filePath = GetSaveFilePath(saveName);
+                if (!File.Exists(filePath))
+                {
+                    DisplayMessage($"Save file '{saveName}' not found.", Color.Red);
+                    return;
+                }
+
+                string jsonData = File.ReadAllText(filePath);
+                var saveData = JsonSerializer.Deserialize<GameSave>(jsonData);
+
+                // Restore game state
+                player = saveData.Player;
+                currentLocation = locations[saveData.CurrentLocationKey];
+                
+                // Enable game controls now that we have a loaded player
+                gameForm.EnableGameControls(true);
+                
+                DisplayMessage($"Game loaded successfully! Welcome back, {player.Name}.", Color.Green);
+                ShowLocation();
+                UpdateCharacterDisplay();
+                HasUnsavedChanges = false;
             }
             catch (Exception ex)
             {
-                gameForm.DisplayText($"Failed to load game: {ex.Message}", Color.Red);
+                DisplayMessage($"Error loading game: {ex.Message}", Color.Red);
+            }
+        }
+
+        private string ShowSaveFileDialog(string[] saveFiles, string title)
+        {
+            using (var form = new Form())
+            {
+                form.Text = title;
+                form.Size = new Size(400, 300);
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.FormBorderStyle = FormBorderStyle.FixedDialog;
+                form.MaximizeBox = false;
+                form.MinimizeBox = false;
+
+                var listBox = new ListBox
+                {
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Consolas", 10)
+                };
+
+                foreach (string saveFile in saveFiles)
+                {
+                    try
+                    {
+                        string filePath = GetSaveFilePath(saveFile);
+                        var fileInfo = new FileInfo(filePath);
+                        string displayText = $"{saveFile} ({fileInfo.LastWriteTime:yyyy-MM-dd HH:mm})";
+                        listBox.Items.Add(new { Text = displayText, Value = saveFile });
+                    }
+                    catch
+                    {
+                        listBox.Items.Add(new { Text = saveFile, Value = saveFile });
+                    }
+                }
+
+                listBox.DisplayMember = "Text";
+                listBox.ValueMember = "Value";
+
+                var buttonPanel = new Panel
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = 40
+                };
+
+                var okButton = new Button
+                {
+                    Text = "OK",
+                    DialogResult = DialogResult.OK,
+                    Location = new Point(10, 10),
+                    Size = new Size(75, 23)
+                };
+
+                var cancelButton = new Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Location = new Point(95, 10),
+                    Size = new Size(75, 23)
+                };
+
+                buttonPanel.Controls.AddRange(new Control[] { okButton, cancelButton });
+                form.Controls.AddRange(new Control[] { listBox, buttonPanel });
+
+                form.AcceptButton = okButton;
+                form.CancelButton = cancelButton;
+
+                if (form.ShowDialog() == DialogResult.OK && listBox.SelectedItem != null)
+                {
+                    dynamic selectedItem = listBox.SelectedItem;
+                    return selectedItem.Value;
+                }
+
+                return null;
             }
         }
 
