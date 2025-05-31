@@ -13,7 +13,7 @@ namespace WinFormsApp1
         private Dictionary<string, EnemyInfo> enemyDatabase = new();
         private Dictionary<string, CharacterClassInfo> classDatabase = new();
 
-        public DataLoader(string dataPath = "Data")
+        public DataLoader(string dataPath = "Assets/Data")
         {
             this.dataPath = dataPath;
         }

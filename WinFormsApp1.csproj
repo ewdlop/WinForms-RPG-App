@@ -9,16 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="Data\CharacterClasses.json">
+    <None Update="Assets\Data\CharacterClasses.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\Enemies.json">
+    <None Update="Assets\Data\Enemies.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\Items.json">
+    <None Update="Assets\Data\Items.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\Locations.json">
+    <None Update="Assets\Data\Locations.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
