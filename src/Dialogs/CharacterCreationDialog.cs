@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Linq;
+using WinFormsApp1.Controls;
 
 namespace WinFormsApp1
 {
@@ -10,7 +11,7 @@ namespace WinFormsApp1
     {
         private TextBox nameTextBox;
         private ComboBox classComboBox;
-        private Label statsLabel;
+        private CharacterStatsDisplayControl statsDisplay;
         private Button createButton;
         private Button cancelButton;
         private DataLoader dataLoader;
@@ -86,14 +87,11 @@ namespace WinFormsApp1
             classComboBox.SelectedIndex = 0;
             classComboBox.SelectedIndexChanged += ClassComboBox_SelectedIndexChanged;
 
-            // Stats display - reduced height to make room for buttons
-            statsLabel = new Label
+            // Stats display using custom control
+            statsDisplay = new CharacterStatsDisplayControl
             {
                 Location = new Point(20, 150),
                 Size = new Size(350, 230),
-                BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.LightGray,
-                Font = new Font("Consolas", 9),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
@@ -124,7 +122,7 @@ namespace WinFormsApp1
             // Add controls to form
             this.Controls.AddRange(new Control[] {
                 titleLabel, nameLabel, nameTextBox, classLabel, classComboBox,
-                statsLabel, createButton, cancelButton
+                statsDisplay, createButton, cancelButton
             });
 
             // Update stats display initially
@@ -141,29 +139,7 @@ namespace WinFormsApp1
             string selectedClassName = classComboBox.SelectedItem?.ToString() ?? "";
             var classInfo = dataLoader.GetClassInfo(selectedClassName);
             
-            if (classInfo != null)
-            {
-                var startingItems = GetStartingItemsDisplay(classInfo);
-
-                statsLabel.Text = $"Class: {classInfo.Name}\n\n" +
-                                 $"{classInfo.Description}\n\n" +
-                                 $"Base Stats:\n" +
-                                 $"Health: {classInfo.BaseStats.MaxHealth}\n" +
-                                 $"Attack: {classInfo.BaseStats.Attack}\n" +
-                                 $"Defense: {classInfo.BaseStats.Defense}\n\n" +
-                                 $"Starting Items:\n{startingItems}";
-            }
-        }
-
-        private string GetStartingItemsDisplay(CharacterClassInfo classInfo)
-        {
-            var itemNames = classInfo.StartingItems.Select(itemId =>
-            {
-                var item = dataLoader.CreateItemFromId(itemId);
-                return item?.Name ?? itemId;
-            });
-
-            return string.Join("\n", itemNames.Select(name => $"• {name}"));
+            statsDisplay.UpdateDisplay(classInfo, dataLoader);
         }
 
         private void CreateButton_Click(object sender, EventArgs e)

@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
 using System.Collections.Generic;
+using WinFormsApp1.Controls;
 
 namespace WinFormsApp1
 {
@@ -17,10 +18,9 @@ namespace WinFormsApp1
         private GameEngine gameEngine;
         private ToolStrip toolStrip;
         private Panel sidePanel;
-        private ProgressBar healthBar;
-        private ProgressBar experienceBar;
-        private Label healthLabel;
-        private Label experienceLabel;
+        private CharacterStatsControl characterStatsControl;
+        private ProgressDisplayControl progressDisplayControl;
+        private QuickActionsControl quickActionsControl;
         private GroupBox miniMapPanel;
         private Button quickInventoryButton;
         private Button quickMapButton;
@@ -131,28 +131,15 @@ namespace WinFormsApp1
                 }
             }
 
-            // Manage quick action buttons
+            // Manage quick action buttons through custom control
+            if (quickActionsControl != null)
+            {
+                quickActionsControl.SetButtonsEnabled(enabled, "Stats", "Save", "Load");
+            }
+
+            // Manage mini-map buttons
             if (quickInventoryButton != null) quickInventoryButton.Enabled = enabled;
             if (quickMapButton != null) quickMapButton.Enabled = enabled;
-
-            // Find and manage side panel quick action buttons
-            var quickActionsPanel = sidePanel?.Controls.OfType<GroupBox>().FirstOrDefault(g => g.Text == "Quick Actions");
-            if (quickActionsPanel != null)
-            {
-                foreach (Control control in quickActionsPanel.Controls)
-                {
-                    if (control is TableLayoutPanel layout)
-                    {
-                        foreach (Control button in layout.Controls)
-                        {
-                            if (button is Button btn && (btn.Text == "Stats" || btn.Text == "Save" || btn.Text == "Load"))
-                            {
-                                btn.Enabled = enabled;
-                            }
-                        }
-                    }
-                }
-            }
 
             // Enable/disable input controls
             if (inputTextBox != null) inputTextBox.Enabled = enabled;
@@ -388,27 +375,7 @@ namespace WinFormsApp1
             sideLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             sideLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
 
-            // Character stats panel
-            GroupBox statsPanel = CreateStatsPanel();
-            sideLayout.Controls.Add(statsPanel, 0, 0);
-
-            // Progress bars panel
-            GroupBox progressPanel = CreateProgressPanel();
-            sideLayout.Controls.Add(progressPanel, 0, 1);
-
-            // Mini map panel
-            CreateMiniMapPanel();
-            sideLayout.Controls.Add(miniMapPanel, 0, 2);
-
-            // Quick actions panel
-            GroupBox actionsPanel = CreateQuickActionsPanel();
-            sideLayout.Controls.Add(actionsPanel, 0, 3);
-
-            sidePanel.Controls.Add(sideLayout);
-        }
-
-        private GroupBox CreateStatsPanel()
-        {
+            // Character stats panel using custom control
             GroupBox statsGroup = new GroupBox
             {
                 Text = "Character Stats",
@@ -416,91 +383,14 @@ namespace WinFormsApp1
                 Height = 120,
                 Padding = new Padding(5)
             };
-
-            // Create a scrollable panel for stats
-            Panel scrollableStatsPanel = new Panel
+            characterStatsControl = new CharacterStatsControl
             {
-                Dock = DockStyle.Fill,
-                AutoScroll = true,
-                BorderStyle = BorderStyle.None
+                Dock = DockStyle.Fill
             };
+            statsGroup.Controls.Add(characterStatsControl);
+            sideLayout.Controls.Add(statsGroup, 0, 0);
 
-            // Create a container panel for the actual stats content
-            Panel statsContainer = new Panel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                Padding = new Padding(5)
-            };
-
-            // Create stats layout
-            TableLayoutPanel statsLayout = new TableLayoutPanel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                ColumnCount = 2,
-                RowCount = 8, // Increased to accommodate more stats
-                Location = new Point(0, 0),
-                Width = statsContainer.Width - 10 // Account for padding
-            };
-
-            // Set column styles to prevent overflow
-            statsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            statsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-
-            // Add stat labels (will be updated by UpdateStatus)
-            Label levelLabel = new Label { Text = "Level:", AutoSize = true, Margin = new Padding(2) };
-            Label levelValue = new Label { Text = "1", AutoSize = true, Name = "levelValue", Font = new Font("Arial", 8, FontStyle.Bold), Margin = new Padding(2) };
-            
-            Label goldLabel = new Label { Text = "Gold:", AutoSize = true, Margin = new Padding(2) };
-            Label goldValue = new Label { Text = "50", AutoSize = true, Name = "goldValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.Goldenrod, Margin = new Padding(2) };
-            
-            Label attackLabel = new Label { Text = "Attack:", AutoSize = true, Margin = new Padding(2) };
-            Label attackValue = new Label { Text = "15", AutoSize = true, Name = "attackValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.Red, Margin = new Padding(2) };
-            
-            Label defenseLabel = new Label { Text = "Defense:", AutoSize = true, Margin = new Padding(2) };
-            Label defenseValue = new Label { Text = "8", AutoSize = true, Name = "defenseValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.Blue, Margin = new Padding(2) };
-
-            // Add additional stats that weren't shown before
-            Label expLabel = new Label { Text = "Exp:", AutoSize = true, Margin = new Padding(2) };
-            Label expValue = new Label { Text = "0", AutoSize = true, Name = "expValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.Purple, Margin = new Padding(2) };
-            
-            Label classLabel = new Label { Text = "Class:", AutoSize = true, Margin = new Padding(2) };
-            Label classValue = new Label { Text = "Warrior", AutoSize = true, Name = "classValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.DarkGreen, Margin = new Padding(2) };
-            
-            Label weaponLabel = new Label { Text = "Weapon:", AutoSize = true, Margin = new Padding(2) };
-            Label weaponValue = new Label { Text = "None", AutoSize = true, Name = "weaponValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.DarkOrange, Margin = new Padding(2) };
-            
-            Label armorLabel = new Label { Text = "Armor:", AutoSize = true, Margin = new Padding(2) };
-            Label armorValue = new Label { Text = "None", AutoSize = true, Name = "armorValue", Font = new Font("Arial", 8, FontStyle.Bold), ForeColor = Color.DarkCyan, Margin = new Padding(2) };
-
-            // Add all controls to the layout
-            statsLayout.Controls.Add(levelLabel, 0, 0);
-            statsLayout.Controls.Add(levelValue, 1, 0);
-            statsLayout.Controls.Add(goldLabel, 0, 1);
-            statsLayout.Controls.Add(goldValue, 1, 1);
-            statsLayout.Controls.Add(attackLabel, 0, 2);
-            statsLayout.Controls.Add(attackValue, 1, 2);
-            statsLayout.Controls.Add(defenseLabel, 0, 3);
-            statsLayout.Controls.Add(defenseValue, 1, 3);
-            statsLayout.Controls.Add(expLabel, 0, 4);
-            statsLayout.Controls.Add(expValue, 1, 4);
-            statsLayout.Controls.Add(classLabel, 0, 5);
-            statsLayout.Controls.Add(classValue, 1, 5);
-            statsLayout.Controls.Add(weaponLabel, 0, 6);
-            statsLayout.Controls.Add(weaponValue, 1, 6);
-            statsLayout.Controls.Add(armorLabel, 0, 7);
-            statsLayout.Controls.Add(armorValue, 1, 7);
-
-            statsContainer.Controls.Add(statsLayout);
-            scrollableStatsPanel.Controls.Add(statsContainer);
-            statsGroup.Controls.Add(scrollableStatsPanel);
-            
-            return statsGroup;
-        }
-
-        private GroupBox CreateProgressPanel()
-        {
+            // Progress bars panel using custom control
             GroupBox progressGroup = new GroupBox
             {
                 Text = "Status",
@@ -508,51 +398,33 @@ namespace WinFormsApp1
                 Height = 80,
                 Padding = new Padding(5)
             };
-
-            TableLayoutPanel progressLayout = new TableLayoutPanel
+            progressDisplayControl = new ProgressDisplayControl
             {
+                Dock = DockStyle.Fill
+            };
+            progressGroup.Controls.Add(progressDisplayControl);
+            sideLayout.Controls.Add(progressGroup, 0, 1);
+
+            // Mini map panel
+            CreateMiniMapPanel();
+            sideLayout.Controls.Add(miniMapPanel, 0, 2);
+
+            // Quick actions panel using custom control
+            GroupBox actionsGroup = new GroupBox
+            {
+                Text = "Quick Actions",
                 Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 4
+                Padding = new Padding(5)
             };
-
-            healthLabel = new Label
+            quickActionsControl = new QuickActionsControl
             {
-                Text = "Health: 100/100",
-                AutoSize = true,
-                ForeColor = Color.DarkRed
+                Dock = DockStyle.Fill
             };
+            quickActionsControl.ActionClicked += QuickActionsControl_ActionClicked;
+            actionsGroup.Controls.Add(quickActionsControl);
+            sideLayout.Controls.Add(actionsGroup, 0, 3);
 
-            healthBar = new ProgressBar
-            {
-                Dock = DockStyle.Fill,
-                Height = 20,
-                Style = ProgressBarStyle.Continuous,
-                ForeColor = Color.Red
-            };
-
-            experienceLabel = new Label
-            {
-                Text = "Experience: 0/100",
-                AutoSize = true,
-                ForeColor = Color.DarkBlue
-            };
-
-            experienceBar = new ProgressBar
-            {
-                Dock = DockStyle.Fill,
-                Height = 20,
-                Style = ProgressBarStyle.Continuous,
-                ForeColor = Color.Blue
-            };
-
-            progressLayout.Controls.Add(healthLabel, 0, 0);
-            progressLayout.Controls.Add(healthBar, 0, 1);
-            progressLayout.Controls.Add(experienceLabel, 0, 2);
-            progressLayout.Controls.Add(experienceBar, 0, 3);
-
-            progressGroup.Controls.Add(progressLayout);
-            return progressGroup;
+            sidePanel.Controls.Add(sideLayout);
         }
 
         private void CreateMiniMapPanel()
@@ -586,100 +458,6 @@ namespace WinFormsApp1
 
             miniMapPanel.Controls.Add(mapLabel);
             miniMapPanel.Controls.Add(quickMapButton);
-        }
-
-        private GroupBox CreateQuickActionsPanel()
-        {
-            GroupBox actionsGroup = new GroupBox
-            {
-                Text = "Quick Actions",
-                Dock = DockStyle.Fill,
-                Padding = new Padding(5)
-            };
-
-            TableLayoutPanel actionsLayout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 3
-            };
-
-            // Set equal column and row styles for uniform button sizing
-            actionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            actionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            actionsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
-            actionsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
-            actionsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 33.34F));
-
-            Button lookButton = new Button
-            {
-                Text = "Look",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkCyan,
-                ForeColor = Color.White,
-                Margin = new Padding(2)
-            };
-            lookButton.Click += (s, e) => gameEngine.ProcessCommand("look");
-
-            Button statsButton = new Button
-            {
-                Text = "Stats",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkMagenta,
-                ForeColor = Color.White,
-                Margin = new Padding(2)
-            };
-            statsButton.Click += (s, e) => gameEngine.ShowCharacterStats();
-
-            Button saveButton = new Button
-            {
-                Text = "Save",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkOrange,
-                ForeColor = Color.White,
-                Margin = new Padding(2)
-            };
-            saveButton.Click += (s, e) => gameEngine.SaveGame();
-
-            Button loadButton = new Button
-            {
-                Text = "Load",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkSlateBlue,
-                ForeColor = Color.White,
-                Margin = new Padding(2)
-            };
-            loadButton.Click += (s, e) => gameEngine.LoadGame();
-
-            Button helpButton = new Button
-            {
-                Text = "Help",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkGoldenrod,
-                ForeColor = Color.White,
-                Margin = new Padding(2)
-            };
-            helpButton.Click += (s, e) => gameEngine.ShowHelp();
-
-            Button exitButton = new Button
-            {
-                Text = "Exit",
-                Dock = DockStyle.Fill,
-                BackColor = Color.DarkRed,
-                ForeColor = Color.White,
-                Margin = new Padding(2)
-            };
-            exitButton.Click += (s, e) => this.Close();
-
-            actionsLayout.Controls.Add(lookButton, 0, 0);
-            actionsLayout.Controls.Add(statsButton, 1, 0);
-            actionsLayout.Controls.Add(saveButton, 0, 1);
-            actionsLayout.Controls.Add(loadButton, 1, 1);
-            actionsLayout.Controls.Add(helpButton, 0, 2);
-            actionsLayout.Controls.Add(exitButton, 1, 2);
-
-            actionsGroup.Controls.Add(actionsLayout);
-            return actionsGroup;
         }
 
         private void CreateStatusStrip()
@@ -905,39 +683,24 @@ namespace WinFormsApp1
                 var player = gameEngine.GetPlayer();
                 if (player != null)
                 {
-                    // Update health bar
-                    healthBar.Maximum = player.MaxHealth;
-                    healthBar.Value = Math.Max(0, Math.Min(player.Health, player.MaxHealth));
-                    healthLabel.Text = $"Health: {player.Health}/{player.MaxHealth}";
+                    // Update progress display using custom control
+                    progressDisplayControl?.UpdateProgress(player);
 
-                    // Update experience bar
-                    experienceBar.Maximum = player.ExperienceToNextLevel;
-                    experienceBar.Value = Math.Max(0, Math.Min(player.Experience, player.ExperienceToNextLevel));
-                    experienceLabel.Text = $"Experience: {player.Experience}/{player.ExperienceToNextLevel}";
-
-                    // Update all stat labels in the scrollable stats panel
-                    var levelValue = sidePanel.Controls.Find("levelValue", true).FirstOrDefault() as Label;
-                    var goldValue = sidePanel.Controls.Find("goldValue", true).FirstOrDefault() as Label;
-                    var attackValue = sidePanel.Controls.Find("attackValue", true).FirstOrDefault() as Label;
-                    var defenseValue = sidePanel.Controls.Find("defenseValue", true).FirstOrDefault() as Label;
-                    var expValue = sidePanel.Controls.Find("expValue", true).FirstOrDefault() as Label;
-                    var classValue = sidePanel.Controls.Find("classValue", true).FirstOrDefault() as Label;
-                    var weaponValue = sidePanel.Controls.Find("weaponValue", true).FirstOrDefault() as Label;
-                    var armorValue = sidePanel.Controls.Find("armorValue", true).FirstOrDefault() as Label;
-
-                    if (levelValue != null) levelValue.Text = player.Level.ToString();
-                    if (goldValue != null) goldValue.Text = player.Gold.ToString();
-                    if (attackValue != null) attackValue.Text = player.GetTotalAttack().ToString();
-                    if (defenseValue != null) defenseValue.Text = player.GetTotalDefense().ToString();
-                    if (expValue != null) expValue.Text = $"{player.Experience}/{player.ExperienceToNextLevel}";
-                    if (classValue != null) classValue.Text = player.CharacterClass.ToString();
-                    if (weaponValue != null) weaponValue.Text = player.EquippedWeapon?.Name ?? "None";
-                    if (armorValue != null) armorValue.Text = player.EquippedArmor?.Name ?? "None";
+                    // Update character stats using custom control
+                    characterStatsControl?.UpdateStats(player);
+                }
+                else
+                {
+                    // Clear stats when no player is available
+                    progressDisplayControl?.ClearProgress();
+                    characterStatsControl?.ClearStats();
                 }
             }
             catch
             {
-                // Player not available yet
+                // Player not available yet - clear the displays
+                progressDisplayControl?.ClearProgress();
+                characterStatsControl?.ClearStats();
             }
         }
 
@@ -1084,6 +847,31 @@ namespace WinFormsApp1
                 return;
             }
             SetGameControlsEnabled(enabled);
+        }
+
+        private void QuickActionsControl_ActionClicked(object sender, string action)
+        {
+            switch (action)
+            {
+                case "look":
+                    gameEngine.ProcessCommand("look");
+                    break;
+                case "stats":
+                    gameEngine.ShowCharacterStats();
+                    break;
+                case "save":
+                    gameEngine.SaveGame();
+                    break;
+                case "load":
+                    gameEngine.LoadGame();
+                    break;
+                case "help":
+                    gameEngine.ShowHelp();
+                    break;
+                case "exit":
+                    this.Close();
+                    break;
+            }
         }
     }
 }
