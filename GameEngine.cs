@@ -74,6 +74,9 @@ namespace WinFormsApp1
             currentLocation = locations["village"];
             HasUnsavedChanges = false;
             
+            // Enable game controls now that a game has started
+            gameForm.EnableGameControls(true);
+            
             ShowLocation();
             gameForm.UpdateStatus($"Health: {player.Health}/{player.MaxHealth} | Level: {player.Level} | Gold: {player.Gold}");
         }
@@ -595,6 +598,10 @@ namespace WinFormsApp1
                     gameForm.ClearScreen();
                     gameForm.DisplayText($"Game loaded from '{saveName}'.", Color.Green);
                     gameForm.DisplayText("");
+                    
+                    // Enable game controls since we now have a loaded game
+                    gameForm.EnableGameControls(true);
+                    
                     ShowLocation();
                     HasUnsavedChanges = false;
                 }

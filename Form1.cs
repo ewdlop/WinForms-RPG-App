@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace WinFormsApp1
 {
@@ -23,6 +24,11 @@ namespace WinFormsApp1
         private GroupBox miniMapPanel;
         private Button quickInventoryButton;
         private Button quickMapButton;
+
+        // UI elements that should be disabled until game starts
+        private List<Control> gameRequiredControls;
+        private List<ToolStripItem> gameRequiredMenuItems;
+        private List<ToolStripItem> gameRequiredToolbarItems;
 
         public Form1()
         {
@@ -78,8 +84,79 @@ namespace WinFormsApp1
             // Apply default theme
             ApplyTheme("Classic");
 
+            // Initialize game-required controls tracking
+            InitializeGameStateControls();
+
             // Set focus to input
             inputTextBox.Focus();
+        }
+
+        private void InitializeGameStateControls()
+        {
+            gameRequiredControls = new List<Control>();
+            gameRequiredMenuItems = new List<ToolStripItem>();
+            gameRequiredToolbarItems = new List<ToolStripItem>();
+
+            // Initially disable game-dependent UI elements
+            SetGameControlsEnabled(false);
+        }
+
+        private void SetGameControlsEnabled(bool enabled)
+        {
+            // Find and manage toolbar items
+            foreach (ToolStripItem item in toolStrip.Items)
+            {
+                if (item.Text == "Save" || item.Text == "Load" || item.Text == "Inventory" || item.Text == "Map")
+                {
+                    item.Enabled = enabled;
+                }
+            }
+
+            // Find and manage menu items
+            foreach (ToolStripMenuItem mainMenu in menuStrip.Items)
+            {
+                if (mainMenu.Text.Contains("Character") || mainMenu.Text.Contains("World"))
+                {
+                    mainMenu.Enabled = enabled;
+                }
+                else if (mainMenu.Text.Contains("Game"))
+                {
+                    foreach (ToolStripItem subItem in mainMenu.DropDownItems)
+                    {
+                        if (subItem.Text.Contains("Save") || subItem.Text.Contains("Load"))
+                        {
+                            subItem.Enabled = enabled;
+                        }
+                    }
+                }
+            }
+
+            // Manage quick action buttons
+            if (quickInventoryButton != null) quickInventoryButton.Enabled = enabled;
+            if (quickMapButton != null) quickMapButton.Enabled = enabled;
+
+            // Find and manage side panel quick action buttons
+            var quickActionsPanel = sidePanel?.Controls.OfType<GroupBox>().FirstOrDefault(g => g.Text == "Quick Actions");
+            if (quickActionsPanel != null)
+            {
+                foreach (Control control in quickActionsPanel.Controls)
+                {
+                    if (control is TableLayoutPanel layout)
+                    {
+                        foreach (Control button in layout.Controls)
+                        {
+                            if (button is Button btn && (btn.Text == "Stats" || btn.Text == "Save" || btn.Text == "Load"))
+                            {
+                                btn.Enabled = enabled;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Enable/disable input controls
+            if (inputTextBox != null) inputTextBox.Enabled = enabled;
+            if (submitButton != null) submitButton.Enabled = enabled;
         }
 
         private void CreateMenuStrip()
@@ -363,10 +440,11 @@ namespace WinFormsApp1
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 2,
                 RowCount = 8, // Increased to accommodate more stats
-                Dock = DockStyle.Top
+                Location = new Point(0, 0),
+                Width = statsContainer.Width - 10 // Account for padding
             };
 
-            // Set column styles
+            // Set column styles to prevent overflow
             statsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             statsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
@@ -996,6 +1074,16 @@ namespace WinFormsApp1
                 }
             }
             base.OnFormClosing(e);
+        }
+
+        public void EnableGameControls(bool enabled)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => EnableGameControls(enabled)));
+                return;
+            }
+            SetGameControlsEnabled(enabled);
         }
     }
 }
