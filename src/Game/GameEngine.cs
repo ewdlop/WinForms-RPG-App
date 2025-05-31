@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Windows.Forms;
 
 namespace WinFormsApp1
 {
@@ -18,6 +12,15 @@ namespace WinFormsApp1
         private Random random;
         private bool isInCombat;
         private Enemy currentEnemy;
+
+        // Cheat system variables
+        private bool cheatsEnabled = false;
+        private bool godModeEnabled = false;
+        private bool infiniteHealthEnabled = false;
+        private bool infiniteGoldEnabled = false;
+        private bool noClipModeEnabled = false;
+        private int cheatActivationSequence = 0;
+        private readonly string[] cheatActivationCommands = { "konami", "up", "up", "down", "down", "left", "right", "left", "right", "b", "a" };
 
         public bool HasUnsavedChanges { get; private set; }
 
@@ -115,6 +118,15 @@ namespace WinFormsApp1
 
             HasUnsavedChanges = true;
 
+            // Check for cheat activation sequence
+            CheckCheatActivation(command);
+
+            // Process cheat commands if cheats are enabled
+            if (cheatsEnabled && ProcessCheatCommand(command, args))
+            {
+                return;
+            }
+
             if (isInCombat)
             {
                 ProcessCombatCommand(command, args);
@@ -158,6 +170,17 @@ namespace WinFormsApp1
                 case "help":
                     ShowHelp();
                     break;
+                case "cheat":
+                case "cheats":
+                    if (cheatsEnabled)
+                    {
+                        ShowCheatHelp();
+                    }
+                    else
+                    {
+                        ShowCheatActivationHelp();
+                    }
+                    break;
                 case "save":
                     SaveGame(args.FirstOrDefault());
                     break;
@@ -182,6 +205,577 @@ namespace WinFormsApp1
             }
 
             UpdateStatusBar();
+        }
+
+        private void CheckCheatActivation(string command)
+        {
+            // Special cheat activation sequences
+            if (command == "iddqd" || command == "idkfa" || command == "thereisnospoon")
+            {
+                ActivateCheats();
+                return;
+            }
+
+            // Konami code sequence
+            if (cheatActivationSequence < cheatActivationCommands.Length && 
+                command == cheatActivationCommands[cheatActivationSequence])
+            {
+                cheatActivationSequence++;
+                if (cheatActivationSequence >= cheatActivationCommands.Length)
+                {
+                    ActivateCheats();
+                    cheatActivationSequence = 0;
+                }
+            }
+            else
+            {
+                cheatActivationSequence = 0;
+            }
+        }
+
+        private void ActivateCheats()
+        {
+            if (!cheatsEnabled)
+            {
+                cheatsEnabled = true;
+                DisplayMessage("🎮 CHEAT CODES ACTIVATED! 🎮", Color.Magenta);
+                DisplayMessage("Type 'cheathelp' for available cheat commands.", Color.Cyan);
+                DisplayMessage("Note: Using cheats may affect game balance!", Color.Yellow);
+            }
+            else
+            {
+                DisplayMessage("Cheats are already enabled!", Color.Cyan);
+            }
+        }
+
+        private bool ProcessCheatCommand(string command, string[] args)
+        {
+            if (player == null && !command.StartsWith("cheat"))
+            {
+                DisplayMessage("Start a game first to use cheats!", Color.Red);
+                return true;
+            }
+
+            switch (command)
+            {
+                case "cheathelp":
+                case "cheats":
+                    ShowCheatHelp();
+                    return true;
+
+                case "godmode":
+                case "god":
+                    ToggleGodMode();
+                    return true;
+
+                case "infinitehealth":
+                case "infhealth":
+                    ToggleInfiniteHealth();
+                    return true;
+
+                case "infinitegold":
+                case "infgold":
+                    ToggleInfiniteGold();
+                    return true;
+
+                case "addgold":
+                case "gold":
+                    AddGold(args);
+                    return true;
+
+                case "addexp":
+                case "exp":
+                case "experience":
+                    AddExperience(args);
+                    return true;
+
+                case "levelup":
+                case "lvlup":
+                    CheatLevelUp(args);
+                    return true;
+
+                case "setlevel":
+                case "level":
+                    SetLevel(args);
+                    return true;
+
+                case "heal":
+                case "fullheal":
+                    FullHeal();
+                    return true;
+
+                case "additem":
+                case "giveitem":
+                case "item":
+                    GiveItem(args);
+                    return true;
+
+                case "clearinventory":
+                case "clearinv":
+                    ClearInventory();
+                    return true;
+
+                case "teleport":
+                case "tp":
+                case "goto":
+                    TeleportToLocation(args);
+                    return true;
+
+                case "noclip":
+                    ToggleNoClip();
+                    return true;
+
+                case "spawnenemy":
+                case "addenemy":
+                    SpawnEnemy(args);
+                    return true;
+
+                case "killallenemies":
+                case "killenemies":
+                    KillAllEnemies();
+                    return true;
+
+                case "maxstats":
+                    MaximizeStats();
+                    return true;
+
+                case "setstats":
+                    SetStats(args);
+                    return true;
+
+                case "showdebug":
+                case "debug":
+                    ShowDebugInfo();
+                    return true;
+
+                case "resetgame":
+                    ResetGameState();
+                    return true;
+
+                case "disablecheats":
+                    DisableCheats();
+                    return true;
+
+                default:
+                    return false; // Not a cheat command
+            }
+        }
+
+        private void ShowCheatHelp()
+        {
+            DisplayMessage("=== CHEAT COMMANDS ===", Color.Magenta);
+            DisplayMessage("", Color.White);
+            DisplayMessage("🎮 GAME STATE:", Color.Cyan);
+            DisplayMessage("  godmode/god - Toggle invincibility", Color.White);
+            DisplayMessage("  infinitehealth/infhealth - Toggle infinite health", Color.White);
+            DisplayMessage("  infinitegold/infgold - Toggle infinite gold", Color.White);
+            DisplayMessage("  noclip - Toggle movement restrictions", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("💰 RESOURCES:", Color.Cyan);
+            DisplayMessage("  addgold [amount] - Add gold (default: 1000)", Color.White);
+            DisplayMessage("  addexp [amount] - Add experience (default: 100)", Color.White);
+            DisplayMessage("  heal/fullheal - Restore full health", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("📊 CHARACTER:", Color.Cyan);
+            DisplayMessage("  levelup [count] - Level up (default: 1)", Color.White);
+            DisplayMessage("  setlevel [level] - Set specific level", Color.White);
+            DisplayMessage("  maxstats - Maximize all stats", Color.White);
+            DisplayMessage("  setstats [att] [def] [hp] - Set attack/defense/health", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("🎒 INVENTORY:", Color.Cyan);
+            DisplayMessage("  additem [name] - Add item to inventory", Color.White);
+            DisplayMessage("  clearinventory - Remove all items", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("🗺️ WORLD:", Color.Cyan);
+            DisplayMessage("  teleport [location] - Travel to location", Color.White);
+            DisplayMessage("  spawnenemy [name] - Spawn enemy in current location", Color.White);
+            DisplayMessage("  killallenemies - Remove all enemies from location", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("🔧 DEBUG:", Color.Cyan);
+            DisplayMessage("  showdebug - Display debug information", Color.White);
+            DisplayMessage("  resetgame - Reset to initial state", Color.White);
+            DisplayMessage("  disablecheats - Turn off cheat mode", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("Available locations: village, forest, plains, cave, ruins, lair", Color.Gray);
+        }
+
+        private void ShowCheatActivationHelp()
+        {
+            DisplayMessage("=== CHEAT CODE ACTIVATION ===", Color.Yellow);
+            DisplayMessage("", Color.White);
+            DisplayMessage("🎮 How to Activate Cheats:", Color.Cyan);
+            DisplayMessage("", Color.White);
+            DisplayMessage("Method 1 - Classic Gaming References:", Color.Green);
+            DisplayMessage("  Type: iddqd", Color.White);
+            DisplayMessage("  Type: idkfa", Color.White);
+            DisplayMessage("  Type: thereisnospoon", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("Method 2 - Konami Code Sequence:", Color.Green);
+            DisplayMessage("  Type these commands in order:", Color.White);
+            DisplayMessage("  up → up → down → down → left → right → left → right → b → a", Color.Gray);
+            DisplayMessage("", Color.White);
+            DisplayMessage("Method 3 - Direct Activation:", Color.Green);
+            DisplayMessage("  Type: konami", Color.White);
+            DisplayMessage("", Color.White);
+            DisplayMessage("💡 Tips:", Color.Yellow);
+            DisplayMessage("  • Commands are case-insensitive", Color.Gray);
+            DisplayMessage("  • Once activated, type 'cheathelp' for all cheat commands", Color.Gray);
+            DisplayMessage("  • Cheats affect game balance - use responsibly!", Color.Orange);
+            DisplayMessage("  • You can disable cheats anytime with 'disablecheats'", Color.Gray);
+            DisplayMessage("", Color.White);
+            DisplayMessage("🎯 Popular Cheat Commands (once activated):", Color.Cyan);
+            DisplayMessage("  god - Invincibility mode", Color.White);
+            DisplayMessage("  addgold 9999 - Lots of gold", Color.White);
+            DisplayMessage("  maxstats - Maximize all stats", Color.White);
+            DisplayMessage("  teleport [location] - Instant travel", Color.White);
+            DisplayMessage("", Color.White);
+        }
+
+        private void ToggleGodMode()
+        {
+            godModeEnabled = !godModeEnabled;
+            DisplayMessage($"God Mode: {(godModeEnabled ? "ENABLED" : "DISABLED")}", 
+                godModeEnabled ? Color.Gold : Color.Gray);
+            
+            if (godModeEnabled)
+            {
+                DisplayMessage("You are now invincible!", Color.Yellow);
+            }
+        }
+
+        private void ToggleInfiniteHealth()
+        {
+            infiniteHealthEnabled = !infiniteHealthEnabled;
+            DisplayMessage($"Infinite Health: {(infiniteHealthEnabled ? "ENABLED" : "DISABLED")}", 
+                infiniteHealthEnabled ? Color.Green : Color.Gray);
+        }
+
+        private void ToggleInfiniteGold()
+        {
+            infiniteGoldEnabled = !infiniteGoldEnabled;
+            DisplayMessage($"Infinite Gold: {(infiniteGoldEnabled ? "ENABLED" : "DISABLED")}", 
+                infiniteGoldEnabled ? Color.Gold : Color.Gray);
+        }
+
+        private void AddGold(string[] args)
+        {
+            int amount = 1000;
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedAmount))
+            {
+                amount = Math.Max(1, parsedAmount);
+            }
+
+            player.Gold += amount;
+            DisplayMessage($"Added {amount} gold! Total: {player.Gold}", Color.Gold);
+            UpdateCharacterDisplay();
+        }
+
+        private void AddExperience(string[] args)
+        {
+            int amount = 100;
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedAmount))
+            {
+                amount = Math.Max(1, parsedAmount);
+            }
+
+            int oldLevel = player.Level;
+            player.Experience += amount;
+            
+            // Check for level ups
+            while (player.Experience >= player.Level * 100)
+            {
+                player.Experience -= player.Level * 100;
+                LevelUp();
+            }
+
+            DisplayMessage($"Added {amount} experience!", Color.Cyan);
+            if (player.Level > oldLevel)
+            {
+                DisplayMessage($"Level increased from {oldLevel} to {player.Level}!", Color.Gold);
+            }
+            UpdateCharacterDisplay();
+        }
+
+        private void CheatLevelUp(string[] args)
+        {
+            int count = 1;
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedCount))
+            {
+                count = Math.Max(1, Math.Min(100, parsedCount)); // Cap at 100 levels
+            }
+
+            int oldLevel = player.Level;
+            for (int i = 0; i < count; i++)
+            {
+                LevelUp();
+            }
+
+            DisplayMessage($"Leveled up {count} times! Level: {oldLevel} → {player.Level}", Color.Gold);
+            UpdateCharacterDisplay();
+        }
+
+        private void SetLevel(string[] args)
+        {
+            if (args.Length == 0 || !int.TryParse(args[0], out int level))
+            {
+                DisplayMessage("Usage: setlevel [level]", Color.Red);
+                return;
+            }
+
+            level = Math.Max(1, Math.Min(100, level)); // Level 1-100
+            int oldLevel = player.Level;
+            
+            if (level > oldLevel)
+            {
+                // Level up
+                for (int i = oldLevel; i < level; i++)
+                {
+                    LevelUp();
+                }
+            }
+            else if (level < oldLevel)
+            {
+                // Level down (recalculate stats)
+                player.Level = level;
+                player.MaxHealth = 100 + (level - 1) * 20;
+                player.Health = player.MaxHealth;
+                player.Attack = 10 + (level - 1) * 3;
+                player.Defense = 5 + (level - 1) * 2;
+                player.Experience = 0;
+            }
+
+            DisplayMessage($"Level set to {level}! (was {oldLevel})", Color.Gold);
+            UpdateCharacterDisplay();
+        }
+
+        private void FullHeal()
+        {
+            player.Health = player.MaxHealth;
+            DisplayMessage($"Fully healed! Health: {player.Health}/{player.MaxHealth}", Color.Green);
+            UpdateCharacterDisplay();
+        }
+
+        private void GiveItem(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                DisplayMessage("Usage: additem [item name]", Color.Red);
+                DisplayMessage("Available items: potion, sword, shield, bow, dagger", Color.Gray);
+                return;
+            }
+
+            string itemName = string.Join(" ", args).ToLower();
+            
+            // Create basic items based on name
+            Item item = itemName switch
+            {
+                "potion" or "health potion" => new Item { Name = "Health Potion", Type = ItemType.Potion, Value = 50, Description = "Restores 50 health" },
+                "sword" => new Item { Name = "Iron Sword", Type = ItemType.Weapon, Value = 15, Description = "A sturdy iron sword" },
+                "shield" => new Item { Name = "Iron Shield", Type = ItemType.Armor, Value = 10, Description = "A protective iron shield" },
+                "bow" => new Item { Name = "Hunting Bow", Type = ItemType.Weapon, Value = 12, Description = "A well-crafted bow" },
+                "dagger" => new Item { Name = "Steel Dagger", Type = ItemType.Weapon, Value = 8, Description = "A sharp steel dagger" },
+                "gold" => null, // Handle gold separately
+                _ => new Item { Name = itemName, Type = ItemType.Misc, Value = 1, Description = $"A mysterious {itemName}" }
+            };
+
+            if (itemName.Contains("gold"))
+            {
+                AddGold(new[] { "100" });
+                return;
+            }
+
+            if (item != null)
+            {
+                player.Inventory.Add(item);
+                DisplayMessage($"Added {item.Name} to inventory!", Color.Green);
+            }
+            else
+            {
+                DisplayMessage($"Unknown item: {itemName}", Color.Red);
+            }
+        }
+
+        private void ClearInventory()
+        {
+            int itemCount = player.Inventory.Count;
+            player.Inventory.Clear();
+            DisplayMessage($"Removed {itemCount} items from inventory.", Color.Orange);
+        }
+
+        private void TeleportToLocation(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                DisplayMessage("Usage: teleport [location]", Color.Red);
+                DisplayMessage("Available locations: " + string.Join(", ", locations.Keys), Color.Gray);
+                return;
+            }
+
+            string locationKey = args[0].ToLower();
+            
+            if (locations.ContainsKey(locationKey))
+            {
+                currentLocation = locations[locationKey];
+                DisplayMessage($"⚡ Teleported to {currentLocation.Name}!", Color.Magenta);
+                ShowLocation();
+                UpdateCharacterDisplay();
+            }
+            else
+            {
+                DisplayMessage($"Unknown location: {locationKey}", Color.Red);
+                DisplayMessage("Available locations: " + string.Join(", ", locations.Keys), Color.Gray);
+            }
+        }
+
+        private void ToggleNoClip()
+        {
+            noClipModeEnabled = !noClipModeEnabled;
+            DisplayMessage($"No-Clip Mode: {(noClipModeEnabled ? "ENABLED" : "DISABLED")}", 
+                noClipModeEnabled ? Color.Cyan : Color.Gray);
+            
+            if (noClipModeEnabled)
+            {
+                DisplayMessage("You can now move to any location without restrictions!", Color.Yellow);
+            }
+        }
+
+        private void SpawnEnemy(string[] args)
+        {
+            if (args.Length == 0)
+            {
+                DisplayMessage("Usage: spawnenemy [enemy name]", Color.Red);
+                DisplayMessage("Available enemies: goblin, orc, troll, dragon", Color.Gray);
+                return;
+            }
+
+            string enemyName = string.Join(" ", args).ToLower();
+            
+            Enemy enemy = enemyName switch
+            {
+                "goblin" => new Enemy { Name = "Goblin", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 25, Gold = 10 },
+                "orc" => new Enemy { Name = "Orc", Health = 60, MaxHealth = 60, Attack = 15, Defense = 5, Experience = 50, Gold = 25 },
+                "troll" => new Enemy { Name = "Troll", Health = 120, MaxHealth = 120, Attack = 25, Defense = 10, Experience = 100, Gold = 50 },
+                "dragon" => new Enemy { Name = "Ancient Dragon", Health = 300, MaxHealth = 300, Attack = 50, Defense = 20, Experience = 500, Gold = 200 },
+                _ => new Enemy { Name = enemyName, Health = 50, MaxHealth = 50, Attack = 10, Defense = 3, Experience = 30, Gold = 15 }
+            };
+
+            currentLocation.Enemies.Add(enemy);
+            DisplayMessage($"Spawned {enemy.Name} in {currentLocation.Name}!", Color.Red);
+        }
+
+        private void KillAllEnemies()
+        {
+            int enemyCount = currentLocation.Enemies.Count;
+            currentLocation.Enemies.Clear();
+            
+            if (isInCombat)
+            {
+                isInCombat = false;
+                currentEnemy = null;
+                if (gameForm is Form1 form1)
+                {
+                    form1.SetCombatMode(false);
+                }
+            }
+
+            DisplayMessage($"Removed {enemyCount} enemies from {currentLocation.Name}.", Color.Orange);
+        }
+
+        private void MaximizeStats()
+        {
+            player.Health = player.MaxHealth = 9999;
+            player.Attack = 999;
+            player.Defense = 999;
+            player.Gold = 999999;
+            player.SkillPoints = 999;
+
+            DisplayMessage("All stats maximized!", Color.Gold);
+            DisplayMessage("Health: 9999, Attack: 999, Defense: 999", Color.Yellow);
+            DisplayMessage("Gold: 999,999, Skill Points: 999", Color.Yellow);
+            UpdateCharacterDisplay();
+        }
+
+        private void SetStats(string[] args)
+        {
+            if (args.Length < 3)
+            {
+                DisplayMessage("Usage: setstats [attack] [defense] [health]", Color.Red);
+                return;
+            }
+
+            if (int.TryParse(args[0], out int attack) && 
+                int.TryParse(args[1], out int defense) && 
+                int.TryParse(args[2], out int health))
+            {
+                player.Attack = Math.Max(1, Math.Min(9999, attack));
+                player.Defense = Math.Max(1, Math.Min(9999, defense));
+                player.MaxHealth = Math.Max(1, Math.Min(9999, health));
+                player.Health = player.MaxHealth;
+
+                DisplayMessage($"Stats set - Attack: {player.Attack}, Defense: {player.Defense}, Health: {player.Health}", Color.Gold);
+                UpdateCharacterDisplay();
+            }
+            else
+            {
+                DisplayMessage("Invalid numbers provided!", Color.Red);
+            }
+        }
+
+        private void ShowDebugInfo()
+        {
+            DisplayMessage("=== DEBUG INFORMATION ===", Color.Cyan);
+            DisplayMessage($"Cheats Enabled: {cheatsEnabled}", Color.White);
+            DisplayMessage($"God Mode: {godModeEnabled}", Color.White);
+            DisplayMessage($"Infinite Health: {infiniteHealthEnabled}", Color.White);
+            DisplayMessage($"Infinite Gold: {infiniteGoldEnabled}", Color.White);
+            DisplayMessage($"No-Clip Mode: {noClipModeEnabled}", Color.White);
+            DisplayMessage($"In Combat: {isInCombat}", Color.White);
+            DisplayMessage($"Current Location: {currentLocation?.Key} ({currentLocation?.Name})", Color.White);
+            DisplayMessage($"Player Level: {player?.Level}", Color.White);
+            DisplayMessage($"Player Health: {player?.Health}/{player?.MaxHealth}", Color.White);
+            DisplayMessage($"Player Gold: {player?.Gold}", Color.White);
+            DisplayMessage($"Inventory Items: {player?.Inventory?.Count}", Color.White);
+            DisplayMessage($"Location Enemies: {currentLocation?.Enemies?.Count}", Color.White);
+            DisplayMessage($"Location Items: {currentLocation?.Items?.Count}", Color.White);
+        }
+
+        private void ResetGameState()
+        {
+            var result = MessageBox.Show("This will reset your character to level 1 and clear progress. Continue?", 
+                "Reset Game", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            
+            if (result == DialogResult.Yes)
+            {
+                // Reset player to initial state
+                player.Level = 1;
+                player.Experience = 0;
+                player.Health = player.MaxHealth = 100;
+                player.Attack = 10;
+                player.Defense = 5;
+                player.Gold = 100;
+                player.SkillPoints = 10;
+                player.Inventory.Clear();
+                player.LearnedSkills.Clear();
+
+                // Reset to starting location
+                currentLocation = locations["village"];
+
+                DisplayMessage("Game state reset to beginning!", Color.Orange);
+                ShowLocation();
+                UpdateCharacterDisplay();
+            }
+        }
+
+        private void DisableCheats()
+        {
+            cheatsEnabled = false;
+            godModeEnabled = false;
+            infiniteHealthEnabled = false;
+            infiniteGoldEnabled = false;
+            noClipModeEnabled = false;
+            cheatActivationSequence = 0;
+
+            DisplayMessage("Cheat codes disabled. Game balance restored.", Color.Gray);
         }
 
         private void ProcessCombatCommand(string command, string[] args)
@@ -247,53 +841,75 @@ namespace WinFormsApp1
 
         private void Move(string direction)
         {
-            if (string.IsNullOrEmpty(direction))
+            if (noClipModeEnabled)
             {
-                gameForm.DisplayText("Move where? (north, south, east, west)", Color.Yellow);
-                return;
+                // In no-clip mode, allow movement to any location
+                switch (direction?.ToLower())
+                {
+                    case "village":
+                    case "forest":
+                    case "plains":
+                    case "cave":
+                    case "ruins":
+                    case "lair":
+                        if (locations.ContainsKey(direction.ToLower()))
+                        {
+                            currentLocation = locations[direction.ToLower()];
+                            DisplayMessage($"⚡ No-clip teleport to {currentLocation.Name}!", Color.Magenta);
+                            ShowLocation();
+                            return;
+                        }
+                        break;
+                }
             }
 
-            if (currentLocation.Exits.ContainsKey(direction))
+            // Normal movement logic
+            if (currentLocation?.Exits?.ContainsKey(direction) == true)
             {
-                string locationKey = currentLocation.Exits[direction];
-                if (locations.ContainsKey(locationKey))
+                string nextLocationKey = currentLocation.Exits[direction];
+                if (locations.ContainsKey(nextLocationKey))
                 {
-                    currentLocation = locations[locationKey];
-                    gameForm.DisplayText($"You move {direction}.", Color.Green);
-                    gameForm.DisplayText("");
+                    currentLocation = locations[nextLocationKey];
+                    DisplayMessage($"You move {direction} to {currentLocation.Name}.", Color.Green);
                     ShowLocation();
-
-                    // Random encounter chance
-                    if (random.NextDouble() < 0.3) // 30% chance
-                    {
-                        TriggerRandomEncounter();
-                    }
-                }
-                else
-                {
-                    gameForm.DisplayText("That path seems to be blocked.", Color.Red);
+                    CheckRandomEncounter();
                 }
             }
             else
             {
-                gameForm.DisplayText("You can't go that way.", Color.Red);
+                DisplayMessage("You can't go that way.", Color.Red);
+                if (currentLocation?.Exits?.Any() == true)
+                {
+                    DisplayMessage($"Available exits: {string.Join(", ", currentLocation.Exits.Keys)}", Color.Yellow);
+                }
+            }
+        }
+
+        private void CheckRandomEncounter()
+        {
+            if (random.NextDouble() < 0.3) // 30% chance
+            {
+                TriggerRandomEncounter();
             }
         }
 
         private void TriggerRandomEncounter()
         {
-            var randomEnemies = dataLoader.GetRandomEncounterEnemies();
-            if (randomEnemies.Any())
+            // Create a random enemy encounter
+            string[] possibleEnemies = { "goblin", "orc", "wolf", "bandit" };
+            string enemyType = possibleEnemies[random.Next(possibleEnemies.Length)];
+            
+            Enemy randomEnemy = enemyType switch
             {
-                var randomEnemyInfo = randomEnemies[random.Next(randomEnemies.Count)];
-                var encounter = dataLoader.CreateEnemyFromId(randomEnemyInfo.Id);
-                
-                if (encounter != null)
-                {
-                    gameForm.DisplayText($"A wild {encounter.Name} appears!", Color.Red);
-                    StartCombat(encounter);
-                }
-            }
+                "goblin" => new Enemy { Name = "Wild Goblin", Health = 25, MaxHealth = 25, Attack = 6, Defense = 1, Experience = 15, Gold = 8 },
+                "orc" => new Enemy { Name = "Wandering Orc", Health = 40, MaxHealth = 40, Attack = 10, Defense = 3, Experience = 30, Gold = 15 },
+                "wolf" => new Enemy { Name = "Dire Wolf", Health = 35, MaxHealth = 35, Attack = 12, Defense = 2, Experience = 20, Gold = 5 },
+                "bandit" => new Enemy { Name = "Highway Bandit", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 25, Gold = 20 },
+                _ => new Enemy { Name = "Strange Creature", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 20, Gold = 10 }
+            };
+
+            DisplayMessage($"A {randomEnemy.Name} blocks your path!", Color.Red);
+            StartCombat(randomEnemy);
         }
 
         public void ShowInventory()
@@ -431,6 +1047,13 @@ namespace WinFormsApp1
         private void PerformAttack()
         {
             int damage = Math.Max(1, player.Attack - currentEnemy.Defense + random.Next(-2, 3));
+            
+            // God mode makes attacks more powerful
+            if (godModeEnabled)
+            {
+                damage *= 10;
+            }
+            
             currentEnemy.Health -= damage;
             gameForm.DisplayText($"You attack {currentEnemy.Name} for {damage} damage!", Color.Yellow);
 
@@ -459,11 +1082,24 @@ namespace WinFormsApp1
 
         private void EnemyAttack()
         {
+            // God mode prevents all damage
+            if (godModeEnabled)
+            {
+                gameForm.DisplayText($"{currentEnemy.Name} attacks but cannot harm you!", Color.Cyan);
+                return;
+            }
+
             int damage = Math.Max(1, currentEnemy.Attack - player.Defense + random.Next(-2, 3));
             player.Health -= damage;
             gameForm.DisplayText($"{currentEnemy.Name} attacks you for {damage} damage!", Color.Red);
 
-            if (player.Health <= 0)
+            // Infinite health restores health to full
+            if (infiniteHealthEnabled)
+            {
+                player.Health = player.MaxHealth;
+            }
+
+            if (player.Health <= 0 && !godModeEnabled && !infiniteHealthEnabled)
             {
                 LoseCombat();
             }
@@ -585,6 +1221,7 @@ namespace WinFormsApp1
             gameForm.DisplayText("Character: inventory (inv), stats, skills, help");
             gameForm.DisplayText("Combat: attack [enemy], defend, flee");
             gameForm.DisplayText("Game: save [name], load [name], saves/list, quit");
+            gameForm.DisplayText("Special: cheat/cheats - Show cheat code information");
             gameForm.DisplayText("");
             gameForm.DisplayText("Save Commands:");
             gameForm.DisplayText("  save - Quick save with timestamp");
@@ -596,11 +1233,13 @@ namespace WinFormsApp1
             gameForm.DisplayText("Character Development:");
             gameForm.DisplayText("  skills - Open skill tree to learn new abilities");
             gameForm.DisplayText("");
-            gameForm.DisplayText("Keyboard shortcuts:");
-            gameForm.DisplayText("Tab - Quick inventory, Ctrl+S - Quick save, Ctrl+L - Quick load, F1 - Help");
-            gameForm.DisplayText("");
-            string saveDir = GetSaveDirectory();
-            gameForm.DisplayText($"Save files are stored in: {saveDir}", Color.Gray);
+            gameForm.DisplayText("=== Cheat Code Activation ===", Color.Yellow);
+            gameForm.DisplayText("To activate cheats, try these classic commands:", Color.Yellow);
+            gameForm.DisplayText("  • iddqd (Doom god mode)", Color.Gray);
+            gameForm.DisplayText("  • idkfa (Doom all weapons)", Color.Gray);
+            gameForm.DisplayText("  • thereisnospoon (Matrix reference)", Color.Gray);
+            gameForm.DisplayText("  • Konami Code: up up down down left right left right b a", Color.Gray);
+            gameForm.DisplayText("Once activated, type 'cheathelp' for cheat commands!", Color.Cyan);
             gameForm.DisplayText("");
         }
 
@@ -621,7 +1260,7 @@ namespace WinFormsApp1
                 var saveData = new GameSave
                 {
                     Player = player,
-                    CurrentLocationKey = locations.FirstOrDefault(l => l.Value == currentLocation).Key ?? "village",
+                    CurrentLocationKey = currentLocation?.Key ?? "village",
                     Locations = locations,
                     SaveDate = DateTime.Now
                 };
@@ -788,7 +1427,7 @@ namespace WinFormsApp1
 
         public string GetCurrentLocationKey()
         {
-            return locations.FirstOrDefault(l => l.Value == currentLocation).Key ?? "village";
+            return currentLocation?.Key ?? "village";
         }
 
         public void ListSaveFiles()
@@ -862,6 +1501,26 @@ namespace WinFormsApp1
         {
             // Allow other forms to display messages in the main game window
             gameForm.DisplayText(message, color);
+        }
+
+        // Override gold spending for infinite gold
+        public void SpendGold(int amount)
+        {
+            if (infiniteGoldEnabled)
+            {
+                DisplayMessage($"Infinite gold enabled - no cost!", Color.Gold);
+                return;
+            }
+
+            if (player.Gold >= amount)
+            {
+                player.Gold -= amount;
+                UpdateCharacterDisplay();
+            }
+            else
+            {
+                DisplayMessage("Not enough gold!", Color.Red);
+            }
         }
     }
 } 

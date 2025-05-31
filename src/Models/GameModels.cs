@@ -107,6 +107,8 @@ namespace WinFormsApp1
         public int MaxHealth { get; set; }
         public int Attack { get; set; }
         public int Defense { get; set; }
+        public int Experience { get; set; } // Experience reward when defeated
+        public int Gold { get; set; } // Gold reward when defeated
         public List<Item> LootTable { get; set; }
 
         public Enemy()
@@ -122,6 +124,9 @@ namespace WinFormsApp1
             MaxHealth = health;
             Attack = attack;
             Defense = defense;
+            // Set default rewards based on level
+            Experience = level * 15;
+            Gold = level * 10;
         }
     }
 
@@ -151,6 +156,7 @@ namespace WinFormsApp1
 
     public class Location
     {
+        public string Key { get; set; } // Location identifier/key
         public string Name { get; set; }
         public string Description { get; set; }
         public Dictionary<string, string> Exits { get; set; }
@@ -165,7 +171,6 @@ namespace WinFormsApp1
             Items = new List<Item>();
             Enemies = new List<Enemy>();
             NPCs = new List<string>();
-            IsVisited = false;
         }
     }
 

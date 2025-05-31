@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
 
 namespace WinFormsApp1
@@ -87,7 +83,7 @@ namespace WinFormsApp1
                 var locationData = JsonSerializer.Deserialize<LocationData>(locationsJson);
                 
                 if (locationData?.Locations == null)
-                    return new Dictionary<string, Location>();
+                    throw new Exception("No location data found");
 
                 var locations = new Dictionary<string, Location>();
                 
@@ -95,6 +91,7 @@ namespace WinFormsApp1
                 {
                     var location = new Location
                     {
+                        Key = locationInfo.Id,
                         Name = locationInfo.Name,
                         Description = locationInfo.Description,
                         Exits = locationInfo.Exits.ToDictionary(
@@ -144,6 +141,13 @@ namespace WinFormsApp1
                 enemyInfo.Attack,
                 enemyInfo.Defense
             );
+
+            // Set experience and gold from JSON data
+            enemy.Experience = enemyInfo.ExperienceReward;
+            
+            // Calculate gold reward (use random value between min and max)
+            var random = new Random();
+            enemy.Gold = random.Next(enemyInfo.GoldReward.Min, enemyInfo.GoldReward.Max + 1);
 
             // Add loot table
             foreach (var lootItem in enemyInfo.LootTable)
