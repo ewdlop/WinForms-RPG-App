@@ -1,4 +1,5 @@
 using System.Text.Json;
+using WinFormsApp1.Constants;
 
 namespace WinFormsApp1
 {
@@ -9,9 +10,9 @@ namespace WinFormsApp1
         private Dictionary<string, EnemyInfo> enemyDatabase = new();
         private Dictionary<string, CharacterClassInfo> classDatabase = new();
 
-        public DataLoader(string dataPath = "Assets/Data")
+        public DataLoader(string dataPath = null)
         {
-            this.dataPath = dataPath;
+            this.dataPath = dataPath ?? GameConstants.DATA_PATH;
         }
 
         public void LoadAllData()
@@ -25,7 +26,7 @@ namespace WinFormsApp1
         {
             try
             {
-                string itemsJson = File.ReadAllText(Path.Combine(dataPath, "Items.json"));
+                string itemsJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.ITEMS_JSON));
                 var itemData = JsonSerializer.Deserialize<ItemData>(itemsJson);
                 
                 if (itemData?.Items != null)
@@ -43,7 +44,7 @@ namespace WinFormsApp1
         {
             try
             {
-                string enemiesJson = File.ReadAllText(Path.Combine(dataPath, "Enemies.json"));
+                string enemiesJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.ENEMIES_JSON));
                 var enemyData = JsonSerializer.Deserialize<EnemyData>(enemiesJson);
                 
                 if (enemyData?.Enemies != null)
@@ -61,7 +62,7 @@ namespace WinFormsApp1
         {
             try
             {
-                string classesJson = File.ReadAllText(Path.Combine(dataPath, "CharacterClasses.json"));
+                string classesJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.CHARACTER_CLASSES_JSON));
                 var classData = JsonSerializer.Deserialize<CharacterClassData>(classesJson);
                 
                 if (classData?.CharacterClasses != null)
@@ -79,7 +80,7 @@ namespace WinFormsApp1
         {
             try
             {
-                string locationsJson = File.ReadAllText(Path.Combine(dataPath, "Locations.json"));
+                string locationsJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.LOCATIONS_JSON));
                 var locationData = JsonSerializer.Deserialize<LocationData>(locationsJson);
                 
                 if (locationData?.Locations == null)
@@ -213,11 +214,11 @@ namespace WinFormsApp1
         {
             return type.ToLower() switch
             {
-                "weapon" => ItemType.Weapon,
-                "armor" => ItemType.Armor,
-                "potion" => ItemType.Potion,
-                "key" => ItemType.Key,
-                "quest" => ItemType.Quest,
+                GameConstants.WEAPON_TYPE => ItemType.Weapon,
+                GameConstants.ARMOR_TYPE => ItemType.Armor,
+                GameConstants.POTION_TYPE => ItemType.Potion,
+                GameConstants.KEY_TYPE => ItemType.Key,
+                GameConstants.QUEST_TYPE => ItemType.Quest,
                 _ => ItemType.Misc
             };
         }
@@ -226,10 +227,10 @@ namespace WinFormsApp1
         {
             return className.ToLower() switch
             {
-                "warrior" => CharacterClass.Warrior,
-                "mage" => CharacterClass.Mage,
-                "rogue" => CharacterClass.Rogue,
-                "cleric" => CharacterClass.Cleric,
+                GameConstants.WARRIOR_CLASS => CharacterClass.Warrior,
+                GameConstants.MAGE_CLASS => CharacterClass.Mage,
+                GameConstants.ROGUE_CLASS => CharacterClass.Rogue,
+                GameConstants.CLERIC_CLASS => CharacterClass.Cleric,
                 _ => CharacterClass.Warrior
             };
         }

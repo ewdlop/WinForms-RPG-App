@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using WinFormsApp1.Constants;
 
 namespace WinFormsApp1
 {
@@ -61,25 +62,25 @@ namespace WinFormsApp1
             switch (characterClass)
             {
                 case CharacterClass.Warrior:
-                    Inventory.Add(new Item("Iron Sword", "A sturdy iron blade", ItemType.Weapon, 10));
-                    Inventory.Add(new Item("Leather Armor", "Basic protection", ItemType.Armor, 5));
+                    Inventory.Add(new Item(GameConstants.IRON_SWORD, "A sturdy iron blade", ItemType.Weapon, 10));
+                    Inventory.Add(new Item(GameConstants.LEATHER_ARMOR, "Basic protection", ItemType.Armor, 5));
                     break;
                 case CharacterClass.Mage:
-                    Inventory.Add(new Item("Magic Staff", "A staff imbued with magical energy", ItemType.Weapon, 8));
-                    Inventory.Add(new Item("Mana Potion", "Restores magical energy", ItemType.Potion, 15));
+                    Inventory.Add(new Item(GameConstants.MAGIC_STAFF, "A staff imbued with magical energy", ItemType.Weapon, 8));
+                    Inventory.Add(new Item(GameConstants.MANA_POTION, "Restores magical energy", ItemType.Potion, 15));
                     break;
                 case CharacterClass.Rogue:
-                    Inventory.Add(new Item("Steel Dagger", "A sharp, lightweight blade", ItemType.Weapon, 7));
-                    Inventory.Add(new Item("Lockpicks", "Tools for opening locked doors", ItemType.Misc, 0));
+                    Inventory.Add(new Item(GameConstants.STEEL_DAGGER, "A sharp, lightweight blade", ItemType.Weapon, 7));
+                    Inventory.Add(new Item(GameConstants.LOCKPICKS, "Tools for opening locked doors", ItemType.Misc, 0));
                     break;
                 case CharacterClass.Cleric:
-                    Inventory.Add(new Item("Holy Mace", "A blessed weapon", ItemType.Weapon, 9));
-                    Inventory.Add(new Item("Healing Potion", "Restores 30 health", ItemType.Potion, 30));
+                    Inventory.Add(new Item(GameConstants.HOLY_MACE, "A blessed weapon", ItemType.Weapon, 9));
+                    Inventory.Add(new Item(GameConstants.HEALING_POTION, "Restores 30 health", ItemType.Potion, 30));
                     break;
             }
 
             // Everyone starts with a basic health potion
-            Inventory.Add(new Item("Health Potion", "Restores 20 health", ItemType.Potion, 20));
+            Inventory.Add(new Item(GameConstants.HEALTH_POTION, "Restores 20 health", ItemType.Potion, 20));
         }
 
         public int GetTotalAttack()

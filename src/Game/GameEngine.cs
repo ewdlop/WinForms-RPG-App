@@ -1,4 +1,5 @@
 using System.Text.Json;
+using WinFormsApp1.Constants;
 
 namespace WinFormsApp1
 {
@@ -20,7 +21,7 @@ namespace WinFormsApp1
         private bool infiniteGoldEnabled = false;
         private bool noClipModeEnabled = false;
         private int cheatActivationSequence = 0;
-        private readonly string[] cheatActivationCommands = { "konami", "up", "up", "down", "down", "left", "right", "left", "right", "b", "a" };
+        private readonly string[] cheatActivationCommands = CheatConstants.KONAMI_CODE_SEQUENCE;
 
         public bool HasUnsavedChanges { get; private set; }
 
@@ -28,8 +29,8 @@ namespace WinFormsApp1
         {
             // Create save directory in user's Documents/RealmOfAethermoor/SavedGames
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            string gameFolder = Path.Combine(documentsPath, "RealmOfAethermoor");
-            string saveFolder = Path.Combine(gameFolder, "SavedGames");
+            string gameFolder = Path.Combine(documentsPath, GameConstants.GAME_FOLDER_NAME);
+            string saveFolder = Path.Combine(gameFolder, GameConstants.SAVE_FOLDER_NAME);
             
             // Ensure the directory exists
             Directory.CreateDirectory(saveFolder);
@@ -40,7 +41,7 @@ namespace WinFormsApp1
         private string GetSaveFilePath(string saveName)
         {
             string saveDir = GetSaveDirectory();
-            return Path.Combine(saveDir, $"{saveName}.json");
+            return Path.Combine(saveDir, $"{saveName}{GameConstants.JSON_EXTENSION}");
         }
 
         public GameEngine(Form1 form)
@@ -135,43 +136,43 @@ namespace WinFormsApp1
 
             switch (command)
             {
-                case "look":
-                case "l":
+                case GameConstants.CMD_LOOK:
+                case GameConstants.CMD_LOOK_SHORT:
                     ShowLocation();
                     break;
-                case "go":
-                case "move":
-                case "north":
-                case "south":
-                case "east":
-                case "west":
-                    Move(command == "go" || command == "move" ? args.FirstOrDefault() : command);
+                case GameConstants.CMD_GO:
+                case GameConstants.CMD_MOVE:
+                case GameConstants.CMD_NORTH:
+                case GameConstants.CMD_SOUTH:
+                case GameConstants.CMD_EAST:
+                case GameConstants.CMD_WEST:
+                    Move(command == GameConstants.CMD_GO || command == GameConstants.CMD_MOVE ? args.FirstOrDefault() : command);
                     break;
-                case "inventory":
-                case "inv":
-                case "i":
+                case GameConstants.CMD_INVENTORY:
+                case GameConstants.CMD_INV:
+                case GameConstants.CMD_I:
                     ShowInventory();
                     break;
-                case "stats":
-                case "status":
+                case GameConstants.CMD_STATS:
+                case GameConstants.CMD_STATUS:
                     ShowCharacterStats();
                     break;
-                case "take":
-                case "get":
+                case GameConstants.CMD_TAKE:
+                case GameConstants.CMD_GET:
                     TakeItem(string.Join(" ", args));
                     break;
-                case "use":
+                case GameConstants.CMD_USE:
                     UseItem(string.Join(" ", args));
                     break;
-                case "attack":
-                case "fight":
+                case GameConstants.CMD_ATTACK:
+                case GameConstants.CMD_FIGHT:
                     AttackEnemy(string.Join(" ", args));
                     break;
-                case "help":
+                case GameConstants.CMD_HELP:
                     ShowHelp();
                     break;
-                case "cheat":
-                case "cheats":
+                case GameConstants.CMD_CHEAT:
+                case GameConstants.CMD_CHEATS:
                     if (cheatsEnabled)
                     {
                         ShowCheatHelp();
@@ -181,26 +182,26 @@ namespace WinFormsApp1
                         ShowCheatActivationHelp();
                     }
                     break;
-                case "save":
+                case GameConstants.CMD_SAVE:
                     SaveGame(args.FirstOrDefault());
                     break;
-                case "load":
+                case GameConstants.CMD_LOAD:
                     LoadGame(args.FirstOrDefault());
                     break;
-                case "saves":
-                case "list":
+                case GameConstants.CMD_SAVES:
+                case GameConstants.CMD_LIST:
                     ListSaveFiles();
                     break;
-                case "skills":
-                case "skill":
+                case GameConstants.CMD_SKILLS:
+                case GameConstants.CMD_SKILL:
                     ShowSkillTree();
                     break;
-                case "quit":
-                case "exit":
+                case GameConstants.CMD_QUIT:
+                case GameConstants.CMD_EXIT:
                     gameForm.Close();
                     break;
                 default:
-                    gameForm.DisplayText("I don't understand that command. Type 'help' for available commands.", Color.Red);
+                    gameForm.DisplayText(GameConstants.UNKNOWN_COMMAND_MSG, Color.Red);
                     break;
             }
 
@@ -210,7 +211,7 @@ namespace WinFormsApp1
         private void CheckCheatActivation(string command)
         {
             // Special cheat activation sequences
-            if (command == "iddqd" || command == "idkfa" || command == "thereisnospoon")
+            if (CheatConstants.CLASSIC_CHEAT_CODES.Contains(command))
             {
                 ActivateCheats();
                 return;
@@ -238,7 +239,7 @@ namespace WinFormsApp1
             if (!cheatsEnabled)
             {
                 cheatsEnabled = true;
-                DisplayMessage("🎮 CHEAT CODES ACTIVATED! 🎮", Color.Magenta);
+                DisplayMessage(GameConstants.CHEAT_ACTIVATED_MSG, Color.Magenta);
                 DisplayMessage("Type 'cheathelp' for available cheat commands.", Color.Cyan);
                 DisplayMessage("Note: Using cheats may affect game balance!", Color.Yellow);
             }
@@ -250,109 +251,109 @@ namespace WinFormsApp1
 
         private bool ProcessCheatCommand(string command, string[] args)
         {
-            if (player == null && !command.StartsWith("cheat"))
+            if (player == null && !command.StartsWith(GameConstants.CMD_CHEAT))
             {
-                DisplayMessage("Start a game first to use cheats!", Color.Red);
+                DisplayMessage(GameConstants.START_GAME_FOR_CHEATS_MSG, Color.Red);
                 return true;
             }
 
             switch (command)
             {
-                case "cheathelp":
-                case "cheats":
+                case GameConstants.CHEAT_CMD_HELP:
+                case GameConstants.CMD_CHEATS:
                     ShowCheatHelp();
                     return true;
 
-                case "godmode":
-                case "god":
+                case GameConstants.CHEAT_CMD_GODMODE:
+                case GameConstants.CHEAT_CMD_GOD:
                     ToggleGodMode();
                     return true;
 
-                case "infinitehealth":
-                case "infhealth":
+                case GameConstants.CHEAT_CMD_INFINITE_HEALTH:
+                case GameConstants.CHEAT_CMD_INF_HEALTH:
                     ToggleInfiniteHealth();
                     return true;
 
-                case "infinitegold":
-                case "infgold":
+                case GameConstants.CHEAT_CMD_INFINITE_GOLD:
+                case GameConstants.CHEAT_CMD_INF_GOLD:
                     ToggleInfiniteGold();
                     return true;
 
-                case "addgold":
-                case "gold":
+                case GameConstants.CHEAT_CMD_ADD_GOLD:
+                case GameConstants.CHEAT_CMD_GOLD:
                     AddGold(args);
                     return true;
 
-                case "addexp":
-                case "exp":
-                case "experience":
+                case GameConstants.CHEAT_CMD_ADD_EXP:
+                case GameConstants.CHEAT_CMD_EXP:
+                case GameConstants.CHEAT_CMD_EXPERIENCE:
                     AddExperience(args);
                     return true;
 
-                case "levelup":
-                case "lvlup":
+                case GameConstants.CHEAT_CMD_LEVEL_UP:
+                case GameConstants.CHEAT_CMD_LVL_UP:
                     CheatLevelUp(args);
                     return true;
 
-                case "setlevel":
-                case "level":
+                case GameConstants.CHEAT_CMD_SET_LEVEL:
+                case GameConstants.CHEAT_CMD_LEVEL:
                     SetLevel(args);
                     return true;
 
-                case "heal":
-                case "fullheal":
+                case GameConstants.CHEAT_CMD_HEAL:
+                case GameConstants.CHEAT_CMD_FULL_HEAL:
                     FullHeal();
                     return true;
 
-                case "additem":
-                case "giveitem":
-                case "item":
+                case GameConstants.CHEAT_CMD_ADD_ITEM:
+                case GameConstants.CHEAT_CMD_GIVE_ITEM:
+                case GameConstants.CHEAT_CMD_ITEM:
                     GiveItem(args);
                     return true;
 
-                case "clearinventory":
-                case "clearinv":
+                case GameConstants.CHEAT_CMD_CLEAR_INVENTORY:
+                case GameConstants.CHEAT_CMD_CLEAR_INV:
                     ClearInventory();
                     return true;
 
-                case "teleport":
-                case "tp":
-                case "goto":
+                case GameConstants.CHEAT_CMD_TELEPORT:
+                case GameConstants.CHEAT_CMD_TP:
+                case GameConstants.CHEAT_CMD_GOTO:
                     TeleportToLocation(args);
                     return true;
 
-                case "noclip":
+                case GameConstants.CHEAT_CMD_NOCLIP:
                     ToggleNoClip();
                     return true;
 
-                case "spawnenemy":
-                case "addenemy":
+                case GameConstants.CHEAT_CMD_SPAWN_ENEMY:
+                case GameConstants.CHEAT_CMD_ADD_ENEMY:
                     SpawnEnemy(args);
                     return true;
 
-                case "killallenemies":
-                case "killenemies":
+                case GameConstants.CHEAT_CMD_KILL_ALL_ENEMIES:
+                case GameConstants.CHEAT_CMD_KILL_ENEMIES:
                     KillAllEnemies();
                     return true;
 
-                case "maxstats":
+                case GameConstants.CHEAT_CMD_MAX_STATS:
                     MaximizeStats();
                     return true;
 
-                case "setstats":
+                case GameConstants.CHEAT_CMD_SET_STATS:
                     SetStats(args);
                     return true;
 
-                case "showdebug":
-                case "debug":
+                case GameConstants.CHEAT_CMD_SHOW_DEBUG:
+                case GameConstants.CHEAT_CMD_DEBUG:
                     ShowDebugInfo();
                     return true;
 
-                case "resetgame":
+                case GameConstants.CHEAT_CMD_RESET_GAME:
                     ResetGameState();
                     return true;
 
-                case "disablecheats":
+                case GameConstants.CHEAT_CMD_DISABLE_CHEATS:
                     DisableCheats();
                     return true;
 
@@ -363,7 +364,7 @@ namespace WinFormsApp1
 
         private void ShowCheatHelp()
         {
-            DisplayMessage("=== CHEAT COMMANDS ===", Color.Magenta);
+            DisplayMessage(GameConstants.CHEAT_HELP_MSG, Color.Magenta);
             DisplayMessage("", Color.White);
             DisplayMessage("🎮 GAME STATE:", Color.Cyan);
             DisplayMessage("  godmode/god - Toggle invincibility", Color.White);
@@ -372,12 +373,12 @@ namespace WinFormsApp1
             DisplayMessage("  noclip - Toggle movement restrictions", Color.White);
             DisplayMessage("", Color.White);
             DisplayMessage("💰 RESOURCES:", Color.Cyan);
-            DisplayMessage("  addgold [amount] - Add gold (default: 1000)", Color.White);
-            DisplayMessage("  addexp [amount] - Add experience (default: 100)", Color.White);
+            DisplayMessage($"  addgold [amount] - Add gold (default: {GameConstants.DEFAULT_GOLD_AMOUNT})", Color.White);
+            DisplayMessage($"  addexp [amount] - Add experience (default: {GameConstants.DEFAULT_EXP_AMOUNT})", Color.White);
             DisplayMessage("  heal/fullheal - Restore full health", Color.White);
             DisplayMessage("", Color.White);
             DisplayMessage("📊 CHARACTER:", Color.Cyan);
-            DisplayMessage("  levelup [count] - Level up (default: 1)", Color.White);
+            DisplayMessage($"  levelup [count] - Level up (default: {GameConstants.DEFAULT_LEVEL_UP_COUNT})", Color.White);
             DisplayMessage("  setlevel [level] - Set specific level", Color.White);
             DisplayMessage("  maxstats - Maximize all stats", Color.White);
             DisplayMessage("  setstats [att] [def] [hp] - Set attack/defense/health", Color.White);
@@ -396,26 +397,26 @@ namespace WinFormsApp1
             DisplayMessage("  resetgame - Reset to initial state", Color.White);
             DisplayMessage("  disablecheats - Turn off cheat mode", Color.White);
             DisplayMessage("", Color.White);
-            DisplayMessage("Available locations: village, forest, plains, cave, ruins, lair", Color.Gray);
+            DisplayMessage($"Available locations: {GameConstants.VILLAGE_LOCATION}, {GameConstants.FOREST_LOCATION}, {GameConstants.PLAINS_LOCATION}, {GameConstants.CAVE_LOCATION}, {GameConstants.RUINS_LOCATION}, {GameConstants.LAIR_LOCATION}", Color.Gray);
         }
 
         private void ShowCheatActivationHelp()
         {
-            DisplayMessage("=== CHEAT CODE ACTIVATION ===", Color.Yellow);
+            DisplayMessage(GameConstants.CHEAT_ACTIVATION_MSG, Color.Yellow);
             DisplayMessage("", Color.White);
             DisplayMessage("🎮 How to Activate Cheats:", Color.Cyan);
             DisplayMessage("", Color.White);
             DisplayMessage("Method 1 - Classic Gaming References:", Color.Green);
-            DisplayMessage("  Type: iddqd", Color.White);
-            DisplayMessage("  Type: idkfa", Color.White);
-            DisplayMessage("  Type: thereisnospoon", Color.White);
+            DisplayMessage($"  Type: {GameConstants.CHEAT_IDDQD}", Color.White);
+            DisplayMessage($"  Type: {GameConstants.CHEAT_IDKFA}", Color.White);
+            DisplayMessage($"  Type: {GameConstants.CHEAT_THEREISNOSPOON}", Color.White);
             DisplayMessage("", Color.White);
             DisplayMessage("Method 2 - Konami Code Sequence:", Color.Green);
             DisplayMessage("  Type these commands in order:", Color.White);
-            DisplayMessage("  up → up → down → down → left → right → left → right → b → a", Color.Gray);
+            DisplayMessage($"  {GameConstants.CHEAT_UP} → {GameConstants.CHEAT_UP} → {GameConstants.CHEAT_DOWN} → {GameConstants.CHEAT_DOWN} → {GameConstants.CHEAT_LEFT} → {GameConstants.CHEAT_RIGHT} → {GameConstants.CHEAT_LEFT} → {GameConstants.CHEAT_RIGHT} → {GameConstants.CHEAT_B} → {GameConstants.CHEAT_A}", Color.Gray);
             DisplayMessage("", Color.White);
             DisplayMessage("Method 3 - Direct Activation:", Color.Green);
-            DisplayMessage("  Type: konami", Color.White);
+            DisplayMessage($"  Type: {GameConstants.CHEAT_KONAMI}", Color.White);
             DisplayMessage("", Color.White);
             DisplayMessage("💡 Tips:", Color.Yellow);
             DisplayMessage("  • Commands are case-insensitive", Color.Gray);
@@ -459,10 +460,10 @@ namespace WinFormsApp1
 
         private void AddGold(string[] args)
         {
-            int amount = 1000;
+            int amount = GameConstants.DEFAULT_GOLD_AMOUNT;
             if (args.Length > 0 && int.TryParse(args[0], out int parsedAmount))
             {
-                amount = Math.Max(1, parsedAmount);
+                amount = Math.Max(GameConstants.MIN_STAT_VALUE, parsedAmount);
             }
 
             player.Gold += amount;
@@ -472,10 +473,10 @@ namespace WinFormsApp1
 
         private void AddExperience(string[] args)
         {
-            int amount = 100;
+            int amount = GameConstants.DEFAULT_EXP_AMOUNT;
             if (args.Length > 0 && int.TryParse(args[0], out int parsedAmount))
             {
-                amount = Math.Max(1, parsedAmount);
+                amount = Math.Max(GameConstants.MIN_STAT_VALUE, parsedAmount);
             }
 
             int oldLevel = player.Level;
@@ -498,10 +499,10 @@ namespace WinFormsApp1
 
         private void CheatLevelUp(string[] args)
         {
-            int count = 1;
+            int count = GameConstants.DEFAULT_LEVEL_UP_COUNT;
             if (args.Length > 0 && int.TryParse(args[0], out int parsedCount))
             {
-                count = Math.Max(1, Math.Min(100, parsedCount)); // Cap at 100 levels
+                count = Math.Max(GameConstants.MIN_STAT_VALUE, Math.Min(GameConstants.MAX_LEVEL, parsedCount));
             }
 
             int oldLevel = player.Level;
@@ -522,7 +523,7 @@ namespace WinFormsApp1
                 return;
             }
 
-            level = Math.Max(1, Math.Min(100, level)); // Level 1-100
+            level = Math.Max(GameConstants.MIN_LEVEL, Math.Min(GameConstants.MAX_LEVEL, level));
             int oldLevel = player.Level;
             
             if (level > oldLevel)
@@ -683,15 +684,15 @@ namespace WinFormsApp1
 
         private void MaximizeStats()
         {
-            player.Health = player.MaxHealth = 9999;
-            player.Attack = 999;
-            player.Defense = 999;
-            player.Gold = 999999;
-            player.SkillPoints = 999;
+            player.Health = player.MaxHealth = GameConstants.MAX_STAT_VALUE;
+            player.Attack = GameConstants.MAX_STAT_VALUE / 10; // 999
+            player.Defense = GameConstants.MAX_STAT_VALUE / 10; // 999
+            player.Gold = GameConstants.MAX_GOLD;
+            player.SkillPoints = GameConstants.MAX_SKILL_POINTS;
 
             DisplayMessage("All stats maximized!", Color.Gold);
-            DisplayMessage("Health: 9999, Attack: 999, Defense: 999", Color.Yellow);
-            DisplayMessage("Gold: 999,999, Skill Points: 999", Color.Yellow);
+            DisplayMessage($"Health: {GameConstants.MAX_STAT_VALUE}, Attack: {GameConstants.MAX_STAT_VALUE / 10}, Defense: {GameConstants.MAX_STAT_VALUE / 10}", Color.Yellow);
+            DisplayMessage($"Gold: {GameConstants.MAX_GOLD:N0}, Skill Points: {GameConstants.MAX_SKILL_POINTS}", Color.Yellow);
             UpdateCharacterDisplay();
         }
 
@@ -707,9 +708,9 @@ namespace WinFormsApp1
                 int.TryParse(args[1], out int defense) && 
                 int.TryParse(args[2], out int health))
             {
-                player.Attack = Math.Max(1, Math.Min(9999, attack));
-                player.Defense = Math.Max(1, Math.Min(9999, defense));
-                player.MaxHealth = Math.Max(1, Math.Min(9999, health));
+                player.Attack = Math.Max(GameConstants.MIN_STAT_VALUE, Math.Min(GameConstants.MAX_STAT_VALUE, attack));
+                player.Defense = Math.Max(GameConstants.MIN_STAT_VALUE, Math.Min(GameConstants.MAX_STAT_VALUE, defense));
+                player.MaxHealth = Math.Max(GameConstants.MIN_STAT_VALUE, Math.Min(GameConstants.MAX_STAT_VALUE, health));
                 player.Health = player.MaxHealth;
 
                 DisplayMessage($"Stats set - Attack: {player.Attack}, Defense: {player.Defense}, Health: {player.Health}", Color.Gold);
@@ -723,7 +724,7 @@ namespace WinFormsApp1
 
         private void ShowDebugInfo()
         {
-            DisplayMessage("=== DEBUG INFORMATION ===", Color.Cyan);
+            DisplayMessage(GameConstants.DEBUG_INFO_MSG, Color.Cyan);
             DisplayMessage($"Cheats Enabled: {cheatsEnabled}", Color.White);
             DisplayMessage($"God Mode: {godModeEnabled}", Color.White);
             DisplayMessage($"Infinite Health: {infiniteHealthEnabled}", Color.White);
@@ -747,7 +748,7 @@ namespace WinFormsApp1
             if (result == DialogResult.Yes)
             {
                 // Reset player to initial state
-                player.Level = 1;
+                player.Level = GameConstants.MIN_LEVEL;
                 player.Experience = 0;
                 player.Health = player.MaxHealth = 100;
                 player.Attack = 10;
@@ -758,7 +759,7 @@ namespace WinFormsApp1
                 player.LearnedSkills.Clear();
 
                 // Reset to starting location
-                currentLocation = locations["village"];
+                currentLocation = locations[GameConstants.DEFAULT_LOCATION];
 
                 DisplayMessage("Game state reset to beginning!", Color.Orange);
                 ShowLocation();
@@ -782,23 +783,23 @@ namespace WinFormsApp1
         {
             switch (command)
             {
-                case "attack":
-                case "fight":
+                case GameConstants.CMD_ATTACK:
+                case GameConstants.CMD_FIGHT:
                     PerformAttack();
                     break;
-                case "defend":
-                case "block":
+                case GameConstants.CMD_DEFEND:
+                case GameConstants.CMD_BLOCK:
                     PerformDefend();
                     break;
-                case "use":
+                case GameConstants.CMD_USE:
                     UseItem(string.Join(" ", args));
                     break;
-                case "flee":
-                case "run":
+                case GameConstants.CMD_FLEE:
+                case GameConstants.CMD_RUN:
                     AttemptFlee();
                     break;
                 default:
-                    gameForm.DisplayText("Combat commands: attack, defend, use [item], flee", Color.Yellow);
+                    gameForm.DisplayText(GameConstants.COMBAT_COMMANDS_MSG, Color.Yellow);
                     break;
             }
         }
@@ -846,12 +847,12 @@ namespace WinFormsApp1
                 // In no-clip mode, allow movement to any location
                 switch (direction?.ToLower())
                 {
-                    case "village":
-                    case "forest":
-                    case "plains":
-                    case "cave":
-                    case "ruins":
-                    case "lair":
+                    case GameConstants.VILLAGE_LOCATION:
+                    case GameConstants.FOREST_LOCATION:
+                    case GameConstants.PLAINS_LOCATION:
+                    case GameConstants.CAVE_LOCATION:
+                    case GameConstants.RUINS_LOCATION:
+                    case GameConstants.LAIR_LOCATION:
                         if (locations.ContainsKey(direction.ToLower()))
                         {
                             currentLocation = locations[direction.ToLower()];
@@ -877,7 +878,7 @@ namespace WinFormsApp1
             }
             else
             {
-                DisplayMessage("You can't go that way.", Color.Red);
+                DisplayMessage(GameConstants.CANT_GO_THAT_WAY_MSG, Color.Red);
                 if (currentLocation?.Exits?.Any() == true)
                 {
                     DisplayMessage($"Available exits: {string.Join(", ", currentLocation.Exits.Keys)}", Color.Yellow);
@@ -887,7 +888,7 @@ namespace WinFormsApp1
 
         private void CheckRandomEncounter()
         {
-            if (random.NextDouble() < 0.3) // 30% chance
+            if (random.NextDouble() < GameConstants.RANDOM_ENCOUNTER_CHANCE)
             {
                 TriggerRandomEncounter();
             }
@@ -896,15 +897,15 @@ namespace WinFormsApp1
         private void TriggerRandomEncounter()
         {
             // Create a random enemy encounter
-            string[] possibleEnemies = { "goblin", "orc", "wolf", "bandit" };
+            string[] possibleEnemies = { GameConstants.GOBLIN, GameConstants.ORC, GameConstants.WOLF, GameConstants.BANDIT };
             string enemyType = possibleEnemies[random.Next(possibleEnemies.Length)];
             
             Enemy randomEnemy = enemyType switch
             {
-                "goblin" => new Enemy { Name = "Wild Goblin", Health = 25, MaxHealth = 25, Attack = 6, Defense = 1, Experience = 15, Gold = 8 },
-                "orc" => new Enemy { Name = "Wandering Orc", Health = 40, MaxHealth = 40, Attack = 10, Defense = 3, Experience = 30, Gold = 15 },
-                "wolf" => new Enemy { Name = "Dire Wolf", Health = 35, MaxHealth = 35, Attack = 12, Defense = 2, Experience = 20, Gold = 5 },
-                "bandit" => new Enemy { Name = "Highway Bandit", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 25, Gold = 20 },
+                GameConstants.GOBLIN => new Enemy { Name = "Wild Goblin", Health = 25, MaxHealth = 25, Attack = 6, Defense = 1, Experience = 15, Gold = 8 },
+                GameConstants.ORC => new Enemy { Name = "Wandering Orc", Health = 40, MaxHealth = 40, Attack = 10, Defense = 3, Experience = 30, Gold = 15 },
+                GameConstants.WOLF => new Enemy { Name = "Dire Wolf", Health = 35, MaxHealth = 35, Attack = 12, Defense = 2, Experience = 20, Gold = 5 },
+                GameConstants.BANDIT => new Enemy { Name = "Highway Bandit", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 25, Gold = 20 },
                 _ => new Enemy { Name = "Strange Creature", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 20, Gold = 10 }
             };
 
@@ -914,7 +915,7 @@ namespace WinFormsApp1
 
         public void ShowInventory()
         {
-            gameForm.DisplayText("=== Inventory ===", Color.Yellow);
+            gameForm.DisplayText(GameConstants.INVENTORY_MSG, Color.Yellow);
             if (player.Inventory.Any())
             {
                 foreach (var item in player.Inventory)
@@ -924,14 +925,14 @@ namespace WinFormsApp1
             }
             else
             {
-                gameForm.DisplayText("Your inventory is empty.");
+                gameForm.DisplayText(GameConstants.INVENTORY_EMPTY_MSG);
             }
             gameForm.DisplayText("");
         }
 
         public void ShowCharacterStats()
         {
-            gameForm.DisplayText("=== Character Stats ===", Color.Cyan);
+            gameForm.DisplayText(GameConstants.CHARACTER_STATS_MSG, Color.Cyan);
             gameForm.DisplayText($"Name: {player.Name}");
             gameForm.DisplayText($"Class: {player.CharacterClass}");
             gameForm.DisplayText($"Level: {player.Level}");
@@ -962,7 +963,7 @@ namespace WinFormsApp1
             }
             else
             {
-                gameForm.DisplayText("There's no such item here.", Color.Red);
+                gameForm.DisplayText(GameConstants.NO_SUCH_ITEM_MSG, Color.Red);
             }
         }
 
@@ -1011,7 +1012,7 @@ namespace WinFormsApp1
                 }
                 else
                 {
-                    gameForm.DisplayText("There's nothing to attack here.", Color.Red);
+                    gameForm.DisplayText(GameConstants.NOTHING_TO_ATTACK_MSG, Color.Red);
                 }
                 return;
             }
@@ -1025,7 +1026,7 @@ namespace WinFormsApp1
             }
             else
             {
-                gameForm.DisplayText("There's no such enemy here.", Color.Red);
+                gameForm.DisplayText(GameConstants.NO_SUCH_ENEMY_MSG, Color.Red);
             }
         }
 
@@ -1033,9 +1034,9 @@ namespace WinFormsApp1
         {
             isInCombat = true;
             currentEnemy = enemy;
-            DisplayMessage($"A {enemy.Name} appears! Combat begins!", Color.Red);
+            DisplayMessage($"A {enemy.Name} appears! {GameConstants.COMBAT_BEGIN_MSG}", Color.Red);
             DisplayMessage($"Enemy Health: {enemy.Health}/{enemy.MaxHealth}", Color.Orange);
-            DisplayMessage("Commands: attack, defend, use [item], flee", Color.Yellow);
+            DisplayMessage(GameConstants.COMBAT_COMMANDS_MSG, Color.Yellow);
             
             // Set combat mode in status bar
             if (gameForm is Form1 form1)
@@ -1107,14 +1108,14 @@ namespace WinFormsApp1
 
         private void AttemptFlee()
         {
-            if (random.NextDouble() < 0.7) // 70% success rate
+            if (random.NextDouble() < GameConstants.FLEE_SUCCESS_RATE)
             {
-                gameForm.DisplayText("You successfully flee from combat!", Color.Green);
+                gameForm.DisplayText(GameConstants.COMBAT_FLEE_SUCCESS_MSG, Color.Green);
                 EndCombat();
             }
             else
             {
-                gameForm.DisplayText("You failed to escape!", Color.Red);
+                gameForm.DisplayText(GameConstants.COMBAT_FLEE_FAIL_MSG, Color.Red);
                 EnemyAttack();
             }
         }
@@ -1124,7 +1125,7 @@ namespace WinFormsApp1
             int expGained = currentEnemy.Level * 25;
             int goldGained = random.Next(10, 30) * currentEnemy.Level;
             
-            DisplayMessage($"You defeated the {currentEnemy.Name}!", Color.Green);
+            DisplayMessage($"{GameConstants.COMBAT_VICTORY_MSG} {currentEnemy.Name}!", Color.Green);
             DisplayMessage($"You gained {expGained} experience and {goldGained} gold!", Color.Yellow);
             
             player.Experience += expGained;
@@ -1165,11 +1166,11 @@ namespace WinFormsApp1
 
         private void LoseCombat()
         {
-            gameForm.DisplayText("You have been defeated!", Color.Red);
+            gameForm.DisplayText(GameConstants.COMBAT_DEFEAT_MSG, Color.Red);
             gameForm.DisplayText("You wake up back in the village, wounded but alive.", Color.Yellow);
             
             player.Health = player.MaxHealth / 2;
-            currentLocation = locations["village"];
+            currentLocation = locations[GameConstants.DEFAULT_LOCATION];
             EndCombat();
             ShowLocation();
         }
@@ -1197,7 +1198,7 @@ namespace WinFormsApp1
             player.SkillPoints += 5; // Award skill points
             player.ExperienceToNextLevel = player.Level * 100;
 
-            DisplayMessage($"🎉 LEVEL UP! You are now level {player.Level}!", Color.Gold);
+            DisplayMessage($"{GameConstants.LEVEL_UP_MSG} {player.Level}!", Color.Gold);
             DisplayMessage($"Health increased to {player.MaxHealth}!", Color.Green);
             DisplayMessage($"Attack increased to {player.Attack}!", Color.Green);
             DisplayMessage($"Defense increased to {player.Defense}!", Color.Green);
@@ -1215,7 +1216,7 @@ namespace WinFormsApp1
 
         public void ShowHelp()
         {
-            gameForm.DisplayText("=== Available Commands ===", Color.Cyan);
+            gameForm.DisplayText(GameConstants.HELP_MSG, Color.Cyan);
             gameForm.DisplayText("Movement: go [direction], north, south, east, west");
             gameForm.DisplayText("Interaction: look, take [item], use [item]");
             gameForm.DisplayText("Character: inventory (inv), stats, skills, help");
@@ -1233,12 +1234,12 @@ namespace WinFormsApp1
             gameForm.DisplayText("Character Development:");
             gameForm.DisplayText("  skills - Open skill tree to learn new abilities");
             gameForm.DisplayText("");
-            gameForm.DisplayText("=== Cheat Code Activation ===", Color.Yellow);
+            gameForm.DisplayText(GameConstants.CHEAT_ACTIVATION_MSG, Color.Yellow);
             gameForm.DisplayText("To activate cheats, try these classic commands:", Color.Yellow);
-            gameForm.DisplayText("  • iddqd (Doom god mode)", Color.Gray);
-            gameForm.DisplayText("  • idkfa (Doom all weapons)", Color.Gray);
-            gameForm.DisplayText("  • thereisnospoon (Matrix reference)", Color.Gray);
-            gameForm.DisplayText("  • Konami Code: up up down down left right left right b a", Color.Gray);
+            gameForm.DisplayText($"  • {GameConstants.CHEAT_IDDQD} (Doom god mode)", Color.Gray);
+            gameForm.DisplayText($"  • {GameConstants.CHEAT_IDKFA} (Doom all weapons)", Color.Gray);
+            gameForm.DisplayText($"  • {GameConstants.CHEAT_THEREISNOSPOON} (Matrix reference)", Color.Gray);
+            gameForm.DisplayText($"  • Konami Code: {GameConstants.CHEAT_UP} {GameConstants.CHEAT_UP} {GameConstants.CHEAT_DOWN} {GameConstants.CHEAT_DOWN} {GameConstants.CHEAT_LEFT} {GameConstants.CHEAT_RIGHT} {GameConstants.CHEAT_LEFT} {GameConstants.CHEAT_RIGHT} {GameConstants.CHEAT_B} {GameConstants.CHEAT_A}", Color.Gray);
             gameForm.DisplayText("Once activated, type 'cheathelp' for cheat commands!", Color.Cyan);
             gameForm.DisplayText("");
         }
@@ -1250,17 +1251,17 @@ namespace WinFormsApp1
                 // Generate a timestamped save name if none provided
                 if (string.IsNullOrEmpty(saveName))
                 {
-                    saveName = $"AutoSave_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
+                    saveName = $"{GameConstants.AUTO_SAVE_PREFIX}{DateTime.Now.ToString(GameConstants.SAVE_TIMESTAMP_FORMAT)}";
                 }
-                else if (saveName == "quicksave")
+                else if (saveName == GameConstants.QUICK_SAVE_COMMAND)
                 {
-                    saveName = "QuickSave";
+                    saveName = GameConstants.QUICK_SAVE;
                 }
 
                 var saveData = new GameSave
                 {
                     Player = player,
-                    CurrentLocationKey = currentLocation?.Key ?? "village",
+                    CurrentLocationKey = currentLocation?.Key ?? GameConstants.DEFAULT_LOCATION,
                     Locations = locations,
                     SaveDate = DateTime.Now
                 };
@@ -1427,7 +1428,7 @@ namespace WinFormsApp1
 
         public string GetCurrentLocationKey()
         {
-            return currentLocation?.Key ?? "village";
+            return currentLocation?.Key ?? GameConstants.DEFAULT_LOCATION;
         }
 
         public void ListSaveFiles()
@@ -1519,7 +1520,7 @@ namespace WinFormsApp1
             }
             else
             {
-                DisplayMessage("Not enough gold!", Color.Red);
+                DisplayMessage(GameConstants.NOT_ENOUGH_GOLD_MSG, Color.Red);
             }
         }
     }
