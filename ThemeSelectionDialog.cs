@@ -10,24 +10,26 @@ namespace WinFormsApp1
         private RadioButton classicRadio;
         private RadioButton modernRadio;
         private RadioButton fantasyRadio;
+        private RadioButton darkRadio;
+        private RadioButton highContrastRadio;
         private Panel previewPanel;
         private Label previewLabel;
         private Button okButton;
         private Button cancelButton;
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public GameTheme SelectedTheme { get; private set; }
+        public string SelectedTheme { get; private set; }
 
         public ThemeSelectionDialog()
         {
             InitializeComponent();
-            SelectedTheme = GameTheme.Classic; // Default
+            SelectedTheme = "Classic"; // Default
         }
 
         private void InitializeComponent()
         {
             this.Text = "Select Theme";
-            this.Size = new Size(400, 300);
+            this.Size = new Size(400, 350);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -69,6 +71,22 @@ namespace WinFormsApp1
             };
             fantasyRadio.CheckedChanged += ThemeRadio_CheckedChanged;
 
+            darkRadio = new RadioButton
+            {
+                Text = "Dark Mode",
+                Location = new Point(30, 150),
+                Size = new Size(150, 20)
+            };
+            darkRadio.CheckedChanged += ThemeRadio_CheckedChanged;
+
+            highContrastRadio = new RadioButton
+            {
+                Text = "High Contrast",
+                Location = new Point(30, 180),
+                Size = new Size(150, 20)
+            };
+            highContrastRadio.CheckedChanged += ThemeRadio_CheckedChanged;
+
             // Preview panel
             Label previewTitleLabel = new Label
             {
@@ -81,7 +99,7 @@ namespace WinFormsApp1
             previewPanel = new Panel
             {
                 Location = new Point(200, 85),
-                Size = new Size(150, 80),
+                Size = new Size(150, 100),
                 BorderStyle = BorderStyle.FixedSingle
             };
 
@@ -89,7 +107,7 @@ namespace WinFormsApp1
             {
                 Text = "Sample game text\n> look\nYou are in a village.\nExits: north, east",
                 Location = new Point(5, 5),
-                Size = new Size(140, 70),
+                Size = new Size(140, 90),
                 Font = new Font("Consolas", 8)
             };
 
@@ -99,7 +117,7 @@ namespace WinFormsApp1
             okButton = new Button
             {
                 Text = "OK",
-                Location = new Point(200, 220),
+                Location = new Point(200, 270),
                 Size = new Size(75, 30),
                 DialogResult = DialogResult.OK
             };
@@ -107,14 +125,14 @@ namespace WinFormsApp1
             cancelButton = new Button
             {
                 Text = "Cancel",
-                Location = new Point(285, 220),
+                Location = new Point(285, 270),
                 Size = new Size(75, 30),
                 DialogResult = DialogResult.Cancel
             };
 
             // Add controls
             this.Controls.AddRange(new Control[] {
-                titleLabel, classicRadio, modernRadio, fantasyRadio,
+                titleLabel, classicRadio, modernRadio, fantasyRadio, darkRadio, highContrastRadio,
                 previewTitleLabel, previewPanel, okButton, cancelButton
             });
 
@@ -128,11 +146,15 @@ namespace WinFormsApp1
             if (radio.Checked)
             {
                 if (radio == classicRadio)
-                    SelectedTheme = GameTheme.Classic;
+                    SelectedTheme = "Classic";
                 else if (radio == modernRadio)
-                    SelectedTheme = GameTheme.Modern;
+                    SelectedTheme = "Modern";
                 else if (radio == fantasyRadio)
-                    SelectedTheme = GameTheme.Fantasy;
+                    SelectedTheme = "Fantasy";
+                else if (radio == darkRadio)
+                    SelectedTheme = "Dark";
+                else if (radio == highContrastRadio)
+                    SelectedTheme = "High Contrast";
 
                 UpdatePreview();
             }
@@ -140,19 +162,31 @@ namespace WinFormsApp1
 
         private void UpdatePreview()
         {
-            switch (SelectedTheme)
+            switch (SelectedTheme.ToLower())
             {
-                case GameTheme.Classic:
+                case "classic":
                     previewPanel.BackColor = Color.Black;
                     previewLabel.ForeColor = Color.LimeGreen;
                     break;
-                case GameTheme.Modern:
+                case "modern":
                     previewPanel.BackColor = Color.White;
                     previewLabel.ForeColor = Color.Black;
                     break;
-                case GameTheme.Fantasy:
+                case "fantasy":
                     previewPanel.BackColor = Color.DarkSlateBlue;
                     previewLabel.ForeColor = Color.Gold;
+                    break;
+                case "dark":
+                    previewPanel.BackColor = Color.DarkGray;
+                    previewLabel.ForeColor = Color.White;
+                    break;
+                case "high contrast":
+                    previewPanel.BackColor = Color.Black;
+                    previewLabel.ForeColor = Color.Yellow;
+                    break;
+                default:
+                    previewPanel.BackColor = Color.Black;
+                    previewLabel.ForeColor = Color.LimeGreen;
                     break;
             }
         }

@@ -552,7 +552,7 @@ namespace WinFormsApp1
                 var saveData = new GameSave
                 {
                     Player = player,
-                    CurrentLocationKey = locations.FirstOrDefault(l => l.Value == currentLocation).Key,
+                    CurrentLocationKey = locations.FirstOrDefault(l => l.Value == currentLocation).Key ?? "village",
                     Locations = locations,
                     SaveDate = DateTime.Now
                 };
@@ -586,15 +586,22 @@ namespace WinFormsApp1
                 string saveJson = File.ReadAllText(saveFile);
                 var saveData = JsonSerializer.Deserialize<GameSave>(saveJson);
 
-                player = saveData.Player;
-                locations = saveData.Locations;
-                currentLocation = locations[saveData.CurrentLocationKey];
+                if (saveData?.Player != null && saveData.Locations != null && !string.IsNullOrEmpty(saveData.CurrentLocationKey))
+                {
+                    player = saveData.Player;
+                    locations = saveData.Locations;
+                    currentLocation = locations[saveData.CurrentLocationKey];
 
-                gameForm.ClearScreen();
-                gameForm.DisplayText($"Game loaded from '{saveName}'.", Color.Green);
-                gameForm.DisplayText("");
-                ShowLocation();
-                HasUnsavedChanges = false;
+                    gameForm.ClearScreen();
+                    gameForm.DisplayText($"Game loaded from '{saveName}'.", Color.Green);
+                    gameForm.DisplayText("");
+                    ShowLocation();
+                    HasUnsavedChanges = false;
+                }
+                else
+                {
+                    gameForm.DisplayText("Save file is corrupted or invalid.", Color.Red);
+                }
             }
             catch (Exception ex)
             {
@@ -605,6 +612,22 @@ namespace WinFormsApp1
         private void UpdateStatusBar()
         {
             gameForm.UpdateStatus($"Health: {player.Health}/{player.MaxHealth} | Level: {player.Level} | Gold: {player.Gold}");
+        }
+
+        // Public methods for UI integration
+        public Player GetPlayer()
+        {
+            return player;
+        }
+
+        public Dictionary<string, Location> GetLocations()
+        {
+            return locations;
+        }
+
+        public string GetCurrentLocationKey()
+        {
+            return locations.FirstOrDefault(l => l.Value == currentLocation).Key ?? "village";
         }
     }
 } 

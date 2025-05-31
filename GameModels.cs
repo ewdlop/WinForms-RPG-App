@@ -7,32 +7,27 @@ namespace WinFormsApp1
     {
         public string Name { get; set; }
         public CharacterClass CharacterClass { get; set; }
-        public int Level { get; set; }
+        public int Level { get; set; } = 1;
         public int Health { get; set; }
         public int MaxHealth { get; set; }
         public int Attack { get; set; }
         public int Defense { get; set; }
-        public int Experience { get; set; }
-        public int ExperienceToNextLevel { get; set; }
-        public int Gold { get; set; }
-        public List<Item> Inventory { get; set; }
-        public Item EquippedWeapon { get; set; }
-        public Item EquippedArmor { get; set; }
+        public int Experience { get; set; } = 0;
+        public int ExperienceToNextLevel { get; set; } = 100;
+        public int Gold { get; set; } = 50;
+        public List<Item> Inventory { get; set; } = new List<Item>();
+        public Item? EquippedWeapon { get; set; }
+        public Item? EquippedArmor { get; set; }
 
         public Player()
         {
-            Inventory = new List<Item>();
         }
 
         public Player(string name, CharacterClass characterClass) : this()
         {
             Name = name;
             CharacterClass = characterClass;
-            Level = 1;
-            Experience = 0;
-            ExperienceToNextLevel = 100;
-            Gold = 50;
-
+            
             // Set base stats based on class
             switch (characterClass)
             {
@@ -57,7 +52,7 @@ namespace WinFormsApp1
                     Defense = 10;
                     break;
             }
-
+            
             Health = MaxHealth;
 
             // Starting items based on class
@@ -83,6 +78,22 @@ namespace WinFormsApp1
 
             // Everyone starts with a basic health potion
             Inventory.Add(new Item("Health Potion", "Restores 20 health", ItemType.Potion, 20));
+        }
+
+        public int GetTotalAttack()
+        {
+            int totalAttack = Attack;
+            if (EquippedWeapon != null)
+                totalAttack += EquippedWeapon.Value;
+            return totalAttack;
+        }
+
+        public int GetTotalDefense()
+        {
+            int totalDefense = Defense;
+            if (EquippedArmor != null)
+                totalDefense += EquippedArmor.Value;
+            return totalDefense;
         }
     }
 
