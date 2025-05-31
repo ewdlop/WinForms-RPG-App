@@ -1,0 +1,131 @@
+{
+  "Locations": [
+    {
+      "Id": "village",
+      "Name": "Village of Elderbrook",
+      "Description": "A peaceful village with cobblestone streets and thatched-roof houses. The village well sits in the center of the square.",
+      "Exits": [
+        {
+          "Direction": "north",
+          "LocationId": "forest",
+          "Description": "Dark Forest"
+        },
+        {
+          "Direction": "east",
+          "LocationId": "plains",
+          "Description": "Grassy Plains"
+        }
+      ],
+      "Items": [
+        "health_potion"
+      ],
+      "Enemies": [],
+      "NPCs": [
+        "village_elder",
+        "merchant"
+      ]
+    },
+    {
+      "Id": "forest",
+      "Name": "Dark Forest",
+      "Description": "A dense forest with towering trees that block out most sunlight. Strange sounds echo from the depths.",
+      "Exits": [
+        {
+          "Direction": "south",
+          "LocationId": "village",
+          "Description": "Village of Elderbrook"
+        },
+        {
+          "Direction": "north",
+          "LocationId": "cave",
+          "Description": "Ancient Cave"
+        }
+      ],
+      "Items": [],
+      "Enemies": [
+        "forest_wolf"
+      ],
+      "NPCs": []
+    },
+    {
+      "Id": "plains",
+      "Name": "Grassy Plains",
+      "Description": "Wide open grasslands stretch as far as the eye can see. A gentle breeze rustles the tall grass.",
+      "Exits": [
+        {
+          "Direction": "west",
+          "LocationId": "village",
+          "Description": "Village of Elderbrook"
+        },
+        {
+          "Direction": "north",
+          "LocationId": "ruins",
+          "Description": "Ancient Ruins"
+        }
+      ],
+      "Items": [],
+      "Enemies": [
+        "wild_boar"
+      ],
+      "NPCs": []
+    },
+    {
+      "Id": "cave",
+      "Name": "Ancient Cave",
+      "Description": "A mysterious cave with glowing crystals embedded in the walls. Ancient runes are carved into the stone.",
+      "Exits": [
+        {
+          "Direction": "south",
+          "LocationId": "forest",
+          "Description": "Dark Forest"
+        }
+      ],
+      "Items": [
+        "crystal_sword"
+      ],
+      "Enemies": [
+        "cave_troll"
+      ],
+      "NPCs": []
+    },
+    {
+      "Id": "ruins",
+      "Name": "Ancient Ruins",
+      "Description": "Crumbling stone structures hint at a once-great civilization. Vines have overtaken most of the buildings.",
+      "Exits": [
+        {
+          "Direction": "south",
+          "LocationId": "plains",
+          "Description": "Grassy Plains"
+        }
+      ],
+      "Items": [
+        "ancient_tome"
+      ],
+      "Enemies": [
+        "skeleton_warrior"
+      ],
+      "NPCs": []
+    },
+    {
+      "Id": "dragon_lair",
+      "Name": "Dragon's Lair",
+      "Description": "A massive cavern filled with treasure and the overwhelming presence of an ancient dragon. The air shimmers with magical energy.",
+      "Exits": [
+        {
+          "Direction": "south",
+          "LocationId": "cave",
+          "Description": "Ancient Cave"
+        }
+      ],
+      "Items": [
+        "gold_key",
+        "healing_potion"
+      ],
+      "Enemies": [
+        "dragon"
+      ],
+      "NPCs": []
+    }
+  ]
+} 

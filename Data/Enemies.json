@@ -1,0 +1,169 @@
+{
+  "Enemies": [
+    {
+      "Id": "goblin",
+      "Name": "Goblin",
+      "Level": 1,
+      "Health": 15,
+      "Attack": 5,
+      "Defense": 1,
+      "ExperienceReward": 10,
+      "GoldReward": {
+        "Min": 5,
+        "Max": 15
+      },
+      "LootTable": [
+        {
+          "ItemId": "health_potion",
+          "DropChance": 0.3
+        }
+      ]
+    },
+    {
+      "Id": "wild_boar",
+      "Name": "Wild Boar",
+      "Level": 1,
+      "Health": 20,
+      "Attack": 6,
+      "Defense": 1,
+      "ExperienceReward": 10,
+      "GoldReward": {
+        "Min": 3,
+        "Max": 12
+      },
+      "LootTable": [
+        {
+          "ItemId": "health_potion",
+          "DropChance": 0.2
+        }
+      ]
+    },
+    {
+      "Id": "forest_wolf",
+      "Name": "Forest Wolf",
+      "Level": 2,
+      "Health": 30,
+      "Attack": 8,
+      "Defense": 2,
+      "ExperienceReward": 20,
+      "GoldReward": {
+        "Min": 8,
+        "Max": 20
+      },
+      "LootTable": [
+        {
+          "ItemId": "health_potion",
+          "DropChance": 0.4
+        }
+      ]
+    },
+    {
+      "Id": "skeleton_warrior",
+      "Name": "Skeleton Warrior",
+      "Level": 3,
+      "Health": 40,
+      "Attack": 10,
+      "Defense": 5,
+      "ExperienceReward": 30,
+      "GoldReward": {
+        "Min": 15,
+        "Max": 30
+      },
+      "LootTable": [
+        {
+          "ItemId": "iron_sword",
+          "DropChance": 0.1
+        },
+        {
+          "ItemId": "health_potion",
+          "DropChance": 0.5
+        }
+      ]
+    },
+    {
+      "Id": "orc",
+      "Name": "Orc",
+      "Level": 3,
+      "Health": 40,
+      "Attack": 12,
+      "Defense": 4,
+      "ExperienceReward": 30,
+      "GoldReward": {
+        "Min": 12,
+        "Max": 25
+      },
+      "LootTable": [
+        {
+          "ItemId": "iron_sword",
+          "DropChance": 0.15
+        },
+        {
+          "ItemId": "leather_armor",
+          "DropChance": 0.1
+        },
+        {
+          "ItemId": "health_potion",
+          "DropChance": 0.6
+        }
+      ]
+    },
+    {
+      "Id": "cave_troll",
+      "Name": "Cave Troll",
+      "Level": 5,
+      "Health": 80,
+      "Attack": 15,
+      "Defense": 8,
+      "ExperienceReward": 50,
+      "GoldReward": {
+        "Min": 25,
+        "Max": 50
+      },
+      "LootTable": [
+        {
+          "ItemId": "crystal_sword",
+          "DropChance": 0.2
+        },
+        {
+          "ItemId": "healing_potion",
+          "DropChance": 0.7
+        },
+        {
+          "ItemId": "silver_ring",
+          "DropChance": 0.15
+        }
+      ]
+    },
+    {
+      "Id": "dragon",
+      "Name": "Ancient Dragon",
+      "Level": 10,
+      "Health": 200,
+      "Attack": 30,
+      "Defense": 15,
+      "ExperienceReward": 100,
+      "GoldReward": {
+        "Min": 100,
+        "Max": 200
+      },
+      "LootTable": [
+        {
+          "ItemId": "crystal_sword",
+          "DropChance": 0.8
+        },
+        {
+          "ItemId": "healing_potion",
+          "DropChance": 1.0
+        },
+        {
+          "ItemId": "ancient_tome",
+          "DropChance": 0.5
+        },
+        {
+          "ItemId": "gold_key",
+          "DropChance": 0.3
+        }
+      ]
+    }
+  ]
+} 

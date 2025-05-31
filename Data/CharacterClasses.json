@@ -1,0 +1,60 @@
+{
+  "CharacterClasses": [
+    {
+      "Name": "Warrior",
+      "Description": "A strong melee fighter with high health and defense. Excels in close combat.",
+      "BaseStats": {
+        "MaxHealth": 100,
+        "Attack": 15,
+        "Defense": 8
+      },
+      "StartingItems": [
+        "iron_sword",
+        "leather_armor",
+        "health_potion"
+      ]
+    },
+    {
+      "Name": "Mage",
+      "Description": "A master of magical arts with powerful spells but low physical defense.",
+      "BaseStats": {
+        "MaxHealth": 70,
+        "Attack": 20,
+        "Defense": 5
+      },
+      "StartingItems": [
+        "magic_staff",
+        "mana_potion",
+        "health_potion"
+      ]
+    },
+    {
+      "Name": "Rogue",
+      "Description": "A nimble fighter who relies on speed and stealth to overcome enemies.",
+      "BaseStats": {
+        "MaxHealth": 80,
+        "Attack": 18,
+        "Defense": 6
+      },
+      "StartingItems": [
+        "steel_dagger",
+        "lockpicks",
+        "health_potion"
+      ]
+    },
+    {
+      "Name": "Cleric",
+      "Description": "A holy warrior with healing abilities and balanced combat skills.",
+      "BaseStats": {
+        "MaxHealth": 90,
+        "Attack": 12,
+        "Defense": 10
+      },
+      "StartingItems": [
+        "holy_mace",
+        "healing_potion",
+        "health_potion"
+      ]
+    }
+  ]
+} 

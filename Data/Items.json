@@ -1,0 +1,121 @@
+{
+  "Items": [
+    {
+      "Id": "health_potion",
+      "Name": "Health Potion",
+      "Description": "Restores 20 health",
+      "Type": "Potion",
+      "Value": 20,
+      "Price": 10,
+      "IsStackable": true
+    },
+    {
+      "Id": "healing_potion",
+      "Name": "Healing Potion",
+      "Description": "Restores 30 health",
+      "Type": "Potion",
+      "Value": 30,
+      "Price": 15,
+      "IsStackable": true
+    },
+    {
+      "Id": "mana_potion",
+      "Name": "Mana Potion",
+      "Description": "Restores magical energy",
+      "Type": "Potion",
+      "Value": 15,
+      "Price": 12,
+      "IsStackable": true
+    },
+    {
+      "Id": "iron_sword",
+      "Name": "Iron Sword",
+      "Description": "A sturdy iron blade",
+      "Type": "Weapon",
+      "Value": 10,
+      "Price": 50,
+      "IsStackable": false
+    },
+    {
+      "Id": "magic_staff",
+      "Name": "Magic Staff",
+      "Description": "A staff imbued with magical energy",
+      "Type": "Weapon",
+      "Value": 8,
+      "Price": 60,
+      "IsStackable": false
+    },
+    {
+      "Id": "steel_dagger",
+      "Name": "Steel Dagger",
+      "Description": "A sharp, lightweight blade",
+      "Type": "Weapon",
+      "Value": 7,
+      "Price": 40,
+      "IsStackable": false
+    },
+    {
+      "Id": "holy_mace",
+      "Name": "Holy Mace",
+      "Description": "A blessed weapon",
+      "Type": "Weapon",
+      "Value": 9,
+      "Price": 55,
+      "IsStackable": false
+    },
+    {
+      "Id": "crystal_sword",
+      "Name": "Crystal Sword",
+      "Description": "A magical sword that glows with inner light",
+      "Type": "Weapon",
+      "Value": 15,
+      "Price": 100,
+      "IsStackable": false
+    },
+    {
+      "Id": "leather_armor",
+      "Name": "Leather Armor",
+      "Description": "Basic protection",
+      "Type": "Armor",
+      "Value": 5,
+      "Price": 30,
+      "IsStackable": false
+    },
+    {
+      "Id": "lockpicks",
+      "Name": "Lockpicks",
+      "Description": "Tools for opening locked doors",
+      "Type": "Misc",
+      "Value": 0,
+      "Price": 20,
+      "IsStackable": false
+    },
+    {
+      "Id": "ancient_tome",
+      "Name": "Ancient Tome",
+      "Description": "A book filled with mysterious knowledge",
+      "Type": "Misc",
+      "Value": 0,
+      "Price": 75,
+      "IsStackable": false
+    },
+    {
+      "Id": "gold_key",
+      "Name": "Golden Key",
+      "Description": "A ornate golden key",
+      "Type": "Key",
+      "Value": 0,
+      "Price": 0,
+      "IsStackable": false
+    },
+    {
+      "Id": "silver_ring",
+      "Name": "Silver Ring",
+      "Description": "A simple silver ring that increases defense",
+      "Type": "Armor",
+      "Value": 3,
+      "Price": 45,
+      "IsStackable": false
+    }
+  ]
+} 
