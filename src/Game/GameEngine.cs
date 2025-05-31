@@ -183,6 +183,10 @@ namespace WinFormsApp1
                 case "list":
                     ListSaveFiles();
                     break;
+                case "skills":
+                case "skill":
+                    ShowSkillTree();
+                    break;
                 case "quit":
                 case "exit":
                     gameForm.Close();
@@ -545,15 +549,21 @@ namespace WinFormsApp1
         private void LevelUp()
         {
             player.Level++;
-            player.Experience = 0;
-            player.ExperienceToNextLevel = player.Level * 100;
+            player.ExperienceToNextLevel = 100 + (player.Level * 50); // Exponential experience requirement
+            
+            // Increase stats on level up
             player.MaxHealth += 10;
-            player.Health = player.MaxHealth;
+            player.Health = player.MaxHealth; // Full heal on level up
             player.Attack += 2;
             player.Defense += 1;
-
+            
+            // Award skill points
+            player.SkillPoints += 5; // 5 skill points per level
+            
             gameForm.DisplayText($"Level up! You are now level {player.Level}!", Color.Magenta);
             gameForm.DisplayText("Your stats have increased!", Color.Magenta);
+            gameForm.DisplayText($"You gained 5 skill points! (Total: {player.SkillPoints})", Color.Magenta);
+            gameForm.DisplayText("Use 'skills' command to spend your skill points.", Color.Cyan);
         }
 
         public void ShowHelp()
@@ -561,7 +571,7 @@ namespace WinFormsApp1
             gameForm.DisplayText("=== Available Commands ===", Color.Cyan);
             gameForm.DisplayText("Movement: go [direction], north, south, east, west");
             gameForm.DisplayText("Interaction: look, take [item], use [item]");
-            gameForm.DisplayText("Character: inventory (inv), stats, help");
+            gameForm.DisplayText("Character: inventory (inv), stats, skills, help");
             gameForm.DisplayText("Combat: attack [enemy], defend, flee");
             gameForm.DisplayText("Game: save [name], load [name], saves/list, quit");
             gameForm.DisplayText("");
@@ -571,6 +581,9 @@ namespace WinFormsApp1
             gameForm.DisplayText("  load - Load quick save");
             gameForm.DisplayText("  load [name] - Load specific save");
             gameForm.DisplayText("  saves/list - Show all available saves");
+            gameForm.DisplayText("");
+            gameForm.DisplayText("Character Development:");
+            gameForm.DisplayText("  skills - Open skill tree to learn new abilities");
             gameForm.DisplayText("");
             gameForm.DisplayText("Keyboard shortcuts:");
             gameForm.DisplayText("Tab - Quick inventory, Ctrl+S - Quick save, Ctrl+L - Quick load, F1 - Help");
@@ -727,6 +740,37 @@ namespace WinFormsApp1
             {
                 gameForm.DisplayText($"Failed to list save files: {ex.Message}", Color.Red);
             }
+        }
+
+        public void ShowSkillTree()
+        {
+            if (player == null)
+            {
+                gameForm.DisplayText("Start a new game first!", Color.Red);
+                return;
+            }
+
+            try
+            {
+                var skillTreeForm = new SkillTreeForm(player, this);
+                skillTreeForm.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                gameForm.DisplayText($"Error opening skill tree: {ex.Message}", Color.Red);
+            }
+        }
+
+        public void UpdateCharacterDisplay()
+        {
+            // Update the main form's character stats display
+            UpdateStatusBar();
+        }
+
+        public void DisplayMessage(string message, Color? color = null)
+        {
+            // Allow other forms to display messages in the main game window
+            gameForm.DisplayText(message, color);
         }
     }
 } 

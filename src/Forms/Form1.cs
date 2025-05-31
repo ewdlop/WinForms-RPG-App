@@ -106,7 +106,7 @@ namespace WinFormsApp1
             // Find and manage toolbar items
             foreach (ToolStripItem item in toolStrip.Items)
             {
-                if (item.Text == "Save" || item.Text == "Load" || item.Text == "Inventory" || item.Text == "Map")
+                if (item.Text == "Save" || item.Text == "Load" || item.Text == "Inventory" || item.Text == "Map" || item.Text == "Skills")
                 {
                     item.Enabled = enabled;
                 }
@@ -163,6 +163,7 @@ namespace WinFormsApp1
             ToolStripMenuItem characterMenu = new ToolStripMenuItem("&Character");
             characterMenu.DropDownItems.Add("&Inventory", null, ShowInventory);
             characterMenu.DropDownItems.Add("&Stats", null, (s, e) => gameEngine.ShowCharacterStats());
+            characterMenu.DropDownItems.Add("S&kills", null, (s, e) => gameEngine.ShowSkillTree());
             characterMenu.DropDownItems.Add("&Equipment", null, ShowEquipment);
 
             // World menu
@@ -233,6 +234,13 @@ namespace WinFormsApp1
             };
             mapButton.Click += ShowMap;
 
+            ToolStripButton skillsButton = new ToolStripButton("Skills")
+            {
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                ToolTipText = "Open skill tree"
+            };
+            skillsButton.Click += (s, e) => gameEngine.ShowSkillTree();
+
             ToolStripSeparator separator2 = new ToolStripSeparator();
 
             ToolStripButton helpButton = new ToolStripButton("Help")
@@ -244,7 +252,7 @@ namespace WinFormsApp1
 
             toolStrip.Items.AddRange(new ToolStripItem[] {
                 newGameButton, saveButton, loadButton, separator1,
-                inventoryButton, mapButton, separator2, helpButton
+                inventoryButton, mapButton, skillsButton, separator2, helpButton
             });
         }
 

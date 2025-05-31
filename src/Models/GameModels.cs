@@ -18,6 +18,8 @@ namespace WinFormsApp1
         public List<Item> Inventory { get; set; } = new List<Item>();
         public Item? EquippedWeapon { get; set; }
         public Item? EquippedArmor { get; set; }
+        public int SkillPoints { get; set; } = 10; // Starting skill points
+        public List<string> LearnedSkills { get; set; } = new List<string>();
 
         public Player()
         {
