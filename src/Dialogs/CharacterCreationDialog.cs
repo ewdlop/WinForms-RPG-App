@@ -27,8 +27,8 @@ namespace WinFormsApp1
         private void InitializeComponent()
         {
             this.Text = "Create Your Character";
-            this.Size = new Size(400, 400);
-            this.MinimumSize = new Size(380, 380);
+            this.Size = new Size(400, 520);
+            this.MinimumSize = new Size(380, 500);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MaximizeBox = true;
@@ -86,22 +86,22 @@ namespace WinFormsApp1
             classComboBox.SelectedIndex = 0;
             classComboBox.SelectedIndexChanged += ClassComboBox_SelectedIndexChanged;
 
-            // Stats display
+            // Stats display - reduced height to make room for buttons
             statsLabel = new Label
             {
                 Location = new Point(20, 150),
-                Size = new Size(350, 150),
+                Size = new Size(350, 230),
                 BorderStyle = BorderStyle.FixedSingle,
                 BackColor = Color.LightGray,
                 Font = new Font("Consolas", 9),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            // Buttons
+            // Buttons - positioned lower with more space
             createButton = new Button
             {
                 Text = "Create Character",
-                Location = new Point(130, 320),
+                Location = new Point(130, 400),
                 Size = new Size(120, 30),
                 BackColor = Color.Green,
                 ForeColor = Color.White,
@@ -113,7 +113,7 @@ namespace WinFormsApp1
             cancelButton = new Button
             {
                 Text = "Cancel",
-                Location = new Point(260, 320),
+                Location = new Point(260, 400),
                 Size = new Size(80, 30),
                 BackColor = Color.Gray,
                 ForeColor = Color.White,
