@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using WinFormsApp1.Localization;
 
 namespace WinFormsApp1.Controls
 {
@@ -51,7 +52,7 @@ namespace WinFormsApp1.Controls
             // Current location label
             locationLabel = new Label
             {
-                Text = "Current: Unknown",
+                Text = LocalizationManager.GetString("MiniMap_Current", LocalizationManager.GetString("Status_Unknown")),
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = Color.White,
@@ -68,7 +69,7 @@ namespace WinFormsApp1.Controls
             // Status label
             statusLabel = new Label
             {
-                Text = "Click locations to travel",
+                Text = LocalizationManager.GetString("MiniMap_ClickToTravel"),
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = Color.LightGreen,
@@ -80,7 +81,7 @@ namespace WinFormsApp1.Controls
             // Open full map button
             openFullMapButton = new Button
             {
-                Text = "Open Full Map",
+                Text = LocalizationManager.GetString("MiniMap_OpenFullMap"),
                 Dock = DockStyle.Fill,
                 Height = 25,
                 BackColor = Color.Green,
@@ -106,9 +107,21 @@ namespace WinFormsApp1.Controls
             mapPanel.MouseClick += MapPanel_MouseClick;
             mapPanel.MouseMove += MapPanel_MouseMove;
 
-            // Add tooltip
+            // Add tooltip with localized text
             var toolTip = new ToolTip();
-            toolTip.SetToolTip(mapPanel, "Mini world map - Click locations to get travel info");
+            var tooltipText = LocalizationManager.GetCurrentCulture().Name switch
+            {
+                "zh-CN" => "迷你世界地图 - 点击地点获取旅行信息",
+                "zh-TW" => "迷你世界地圖 - 點擊地點獲取旅行資訊",
+                "ja-JP" => "ミニワールドマップ - 場所をクリックして旅行情報を取得",
+                "ko-KR" => "미니 월드맵 - 위치를 클릭하여 여행 정보 보기",
+                "es-ES" => "Mini mapa del mundo - Haga clic en las ubicaciones para obtener información de viaje",
+                "fr-FR" => "Mini carte du monde - Cliquez sur les emplacements pour obtenir des informations de voyage",
+                "de-DE" => "Mini-Weltkarte - Klicken Sie auf Standorte, um Reiseinformationen zu erhalten",
+                "ru-RU" => "Мини-карта мира - Нажмите на локации, чтобы получить информацию о путешествии",
+                _ => "Mini world map - Click locations to get travel info"
+            };
+            toolTip.SetToolTip(mapPanel, tooltipText);
         }
 
         private void InitializeLocationPositions()
@@ -262,29 +275,113 @@ namespace WinFormsApp1.Controls
                 // Background
                 g.FillRectangle(bgBrush, legendX - 2, legendY - 2, 32, 25);
                 
-                // Legend items
+                // Legend items with localized text
                 g.FillEllipse(Brushes.Red, legendX, legendY, 4, 4);
-                g.DrawString("You", font, textBrush, legendX + 6, legendY - 1);
+                g.DrawString(LocalizationManager.GetString("MiniMap_You"), font, textBrush, legendX + 6, legendY - 1);
                 
                 g.FillEllipse(Brushes.Blue, legendX, legendY + 6, 4, 4);
-                g.DrawString("Visited", font, textBrush, legendX + 6, legendY + 5);
+                g.DrawString(LocalizationManager.GetString("MiniMap_Visited"), font, textBrush, legendX + 6, legendY + 5);
                 
                 g.FillEllipse(Brushes.Gray, legendX, legendY + 12, 4, 4);
-                g.DrawString("Unknown", font, textBrush, legendX + 6, legendY + 11);
+                g.DrawString(LocalizationManager.GetString("MiniMap_Unknown"), font, textBrush, legendX + 6, legendY + 11);
             }
         }
 
         private string GetLocationDisplayName(string locationKey)
         {
-            return locationKey switch
+            // Use localized location names based on current culture
+            return LocalizationManager.GetCurrentCulture().Name switch
             {
-                "village" => "Village",
-                "forest" => "Forest",
-                "plains" => "Plains",
-                "cave" => "Cave",
-                "ruins" => "Ruins",
-                "lair" => "Lair",
-                _ => locationKey
+                "zh-CN" => locationKey switch
+                {
+                    "village" => "村庄",
+                    "forest" => "森林",
+                    "plains" => "平原",
+                    "cave" => "洞穴",
+                    "ruins" => "废墟",
+                    "lair" => "巢穴",
+                    _ => locationKey
+                },
+                "zh-TW" => locationKey switch
+                {
+                    "village" => "村莊",
+                    "forest" => "森林",
+                    "plains" => "平原",
+                    "cave" => "洞穴",
+                    "ruins" => "廢墟",
+                    "lair" => "巢穴",
+                    _ => locationKey
+                },
+                "ja-JP" => locationKey switch
+                {
+                    "village" => "村",
+                    "forest" => "森",
+                    "plains" => "平原",
+                    "cave" => "洞窟",
+                    "ruins" => "遺跡",
+                    "lair" => "巣",
+                    _ => locationKey
+                },
+                "ko-KR" => locationKey switch
+                {
+                    "village" => "마을",
+                    "forest" => "숲",
+                    "plains" => "평원",
+                    "cave" => "동굴",
+                    "ruins" => "유적",
+                    "lair" => "소굴",
+                    _ => locationKey
+                },
+                "es-ES" => locationKey switch
+                {
+                    "village" => "Aldea",
+                    "forest" => "Bosque",
+                    "plains" => "Llanuras",
+                    "cave" => "Cueva",
+                    "ruins" => "Ruinas",
+                    "lair" => "Guarida",
+                    _ => locationKey
+                },
+                "fr-FR" => locationKey switch
+                {
+                    "village" => "Village",
+                    "forest" => "Forêt",
+                    "plains" => "Plaines",
+                    "cave" => "Grotte",
+                    "ruins" => "Ruines",
+                    "lair" => "Tanière",
+                    _ => locationKey
+                },
+                "de-DE" => locationKey switch
+                {
+                    "village" => "Dorf",
+                    "forest" => "Wald",
+                    "plains" => "Ebenen",
+                    "cave" => "Höhle",
+                    "ruins" => "Ruinen",
+                    "lair" => "Versteck",
+                    _ => locationKey
+                },
+                "ru-RU" => locationKey switch
+                {
+                    "village" => "Деревня",
+                    "forest" => "Лес",
+                    "plains" => "Равнины",
+                    "cave" => "Пещера",
+                    "ruins" => "Руины",
+                    "lair" => "Логово",
+                    _ => locationKey
+                },
+                _ => locationKey switch
+                {
+                    "village" => "Village",
+                    "forest" => "Forest",
+                    "plains" => "Plains",
+                    "cave" => "Cave",
+                    "ruins" => "Ruins",
+                    "lair" => "Lair",
+                    _ => locationKey
+                }
             };
         }
 
@@ -295,7 +392,7 @@ namespace WinFormsApp1.Controls
             if (!string.IsNullOrEmpty(clickedLocation))
             {
                 LocationClicked?.Invoke(this, clickedLocation);
-                statusLabel.Text = $"Selected: {GetLocationDisplayName(clickedLocation)}";
+                statusLabel.Text = LocalizationManager.GetString("MiniMap_Selected", GetLocationDisplayName(clickedLocation));
             }
         }
 
@@ -305,12 +402,12 @@ namespace WinFormsApp1.Controls
             string hoveredLocation = GetLocationAtPoint(e.Location);
             if (!string.IsNullOrEmpty(hoveredLocation))
             {
-                statusLabel.Text = $"Hover: {GetLocationDisplayName(hoveredLocation)}";
+                statusLabel.Text = LocalizationManager.GetString("MiniMap_Hover", GetLocationDisplayName(hoveredLocation));
                 mapPanel.Cursor = Cursors.Hand;
             }
             else
             {
-                statusLabel.Text = "Click locations to travel";
+                statusLabel.Text = LocalizationManager.GetString("MiniMap_ClickToTravel");
                 mapPanel.Cursor = Cursors.Default;
             }
         }
@@ -348,7 +445,7 @@ namespace WinFormsApp1.Controls
             currentLocation = location;
             visitedLocations.Add(location);
             
-            locationLabel.Text = $"Current: {GetLocationDisplayName(location)}";
+            locationLabel.Text = LocalizationManager.GetString("MiniMap_Current", GetLocationDisplayName(location));
             mapPanel.Invalidate(); // Trigger repaint
         }
 
@@ -362,7 +459,7 @@ namespace WinFormsApp1.Controls
         {
             visitedLocations.Clear();
             currentLocation = null;
-            locationLabel.Text = "Current: Unknown";
+            locationLabel.Text = LocalizationManager.GetString("MiniMap_Current", LocalizationManager.GetString("Status_Unknown"));
             mapPanel.Invalidate();
         }
 
@@ -370,6 +467,26 @@ namespace WinFormsApp1.Controls
         {
             openFullMapButton.Enabled = enabled;
             mapPanel.Enabled = enabled;
+        }
+
+        /// <summary>
+        /// Updates the control's text when language changes
+        /// </summary>
+        public void RefreshLocalization()
+        {
+            openFullMapButton.Text = LocalizationManager.GetString("MiniMap_OpenFullMap");
+            statusLabel.Text = LocalizationManager.GetString("MiniMap_ClickToTravel");
+            
+            if (!string.IsNullOrEmpty(currentLocation))
+            {
+                locationLabel.Text = LocalizationManager.GetString("MiniMap_Current", GetLocationDisplayName(currentLocation));
+            }
+            else
+            {
+                locationLabel.Text = LocalizationManager.GetString("MiniMap_Current", LocalizationManager.GetString("Status_Unknown"));
+            }
+            
+            mapPanel.Invalidate(); // Refresh legend and location names
         }
     }
 } 

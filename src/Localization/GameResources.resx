@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Application Title -->
+  <data name="AppTitle" xml:space="preserve">
+    <value>Realm of Aethermoor - RPG Adventure</value>
+  </data>
+  
+  <!-- Main Menu -->
+  <data name="Menu_Game" xml:space="preserve">
+    <value>&amp;Game</value>
+  </data>
+  <data name="Menu_NewGame" xml:space="preserve">
+    <value>&amp;New Game</value>
+  </data>
+  <data name="Menu_SaveGame" xml:space="preserve">
+    <value>&amp;Save Game</value>
+  </data>
+  <data name="Menu_LoadGame" xml:space="preserve">
+    <value>&amp;Load Game</value>
+  </data>
+  <data name="Menu_Exit" xml:space="preserve">
+    <value>E&amp;xit</value>
+  </data>
+  <data name="Menu_Character" xml:space="preserve">
+    <value>&amp;Character</value>
+  </data>
+  <data name="Menu_Inventory" xml:space="preserve">
+    <value>&amp;Inventory</value>
+  </data>
+  <data name="Menu_Stats" xml:space="preserve">
+    <value>&amp;Stats</value>
+  </data>
+  <data name="Menu_Skills" xml:space="preserve">
+    <value>S&amp;kills</value>
+  </data>
+  <data name="Menu_Equipment" xml:space="preserve">
+    <value>&amp;Equipment</value>
+  </data>
+  <data name="Menu_World" xml:space="preserve">
+    <value>&amp;World</value>
+  </data>
+  <data name="Menu_Map" xml:space="preserve">
+    <value>&amp;Map</value>
+  </data>
+  <data name="Menu_Locations" xml:space="preserve">
+    <value>&amp;Locations</value>
+  </data>
+  <data name="Menu_Settings" xml:space="preserve">
+    <value>&amp;Settings</value>
+  </data>
+  <data name="Menu_Themes" xml:space="preserve">
+    <value>&amp;Themes</value>
+  </data>
+  <data name="Menu_FontSize" xml:space="preserve">
+    <value>&amp;Font Size</value>
+  </data>
+  <data name="Menu_GameSettings" xml:space="preserve">
+    <value>&amp;Game Settings</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>&amp;Language</value>
+  </data>
+  <data name="Menu_Tools" xml:space="preserve">
+    <value>&amp;Tools</value>
+  </data>
+  <data name="Menu_AssetEditor" xml:space="preserve">
+    <value>&amp;Asset Editor</value>
+  </data>
+  <data name="Menu_DataValidation" xml:space="preserve">
+    <value>&amp;Data Validation</value>
+  </data>
+  <data name="Menu_Help" xml:space="preserve">
+    <value>&amp;Help</value>
+  </data>
+  <data name="Menu_Commands" xml:space="preserve">
+    <value>&amp;Commands</value>
+  </data>
+  <data name="Menu_Controls" xml:space="preserve">
+    <value>&amp;Controls</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>&amp;About</value>
+  </data>
+  
+  <!-- Game Console -->
+  <data name="GameConsole_Title" xml:space="preserve">
+    <value>Game Console</value>
+  </data>
+  <data name="GameConsole_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="GameConsole_ScrollTop" xml:space="preserve">
+    <value>↑ Top</value>
+  </data>
+  <data name="GameConsole_ScrollBottom" xml:space="preserve">
+    <value>↓ Bot</value>
+  </data>
+  
+  <!-- Input Controls -->
+  <data name="Input_Submit" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+  <data name="Input_Inventory" xml:space="preserve">
+    <value>Inventory</value>
+  </data>
+  <data name="Input_Help" xml:space="preserve">
+    <value>Help (F1)</value>
+  </data>
+  <data name="Input_Placeholder" xml:space="preserve">
+    <value>Enter command...</value>
+  </data>
+  <data name="Input_HistoryHint" xml:space="preserve">
+    <value>Use ↑↓ for command history | Recent commands →</value>
+  </data>
+  <data name="Input_Recent" xml:space="preserve">
+    <value>Recent: {0}...</value>
+  </data>
+  
+  <!-- Character Creation -->
+  <data name="CharCreate_Title" xml:space="preserve">
+    <value>Create Your Character</value>
+  </data>
+  <data name="CharCreate_Hero" xml:space="preserve">
+    <value>Create Your Hero</value>
+  </data>
+  <data name="CharCreate_Name" xml:space="preserve">
+    <value>Character Name:</value>
+  </data>
+  <data name="CharCreate_Class" xml:space="preserve">
+    <value>Character Class:</value>
+  </data>
+  <data name="CharCreate_Create" xml:space="preserve">
+    <value>Create Character</value>
+  </data>
+  <data name="CharCreate_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CharCreate_InvalidName" xml:space="preserve">
+    <value>Please enter a character name.</value>
+  </data>
+  <data name="CharCreate_NameTooLong" xml:space="preserve">
+    <value>Character name must be 20 characters or less.</value>
+  </data>
+  <data name="CharCreate_SelectClass" xml:space="preserve">
+    <value>Select a character class to view stats...</value>
+  </data>
+  
+  <!-- Character Classes -->
+  <data name="Class_Warrior" xml:space="preserve">
+    <value>Warrior</value>
+  </data>
+  <data name="Class_Mage" xml:space="preserve">
+    <value>Mage</value>
+  </data>
+  <data name="Class_Rogue" xml:space="preserve">
+    <value>Rogue</value>
+  </data>
+  <data name="Class_Cleric" xml:space="preserve">
+    <value>Cleric</value>
+  </data>
+  <data name="Class_Warrior_Desc" xml:space="preserve">
+    <value>A brave warrior skilled in combat</value>
+  </data>
+  <data name="Class_Mage_Desc" xml:space="preserve">
+    <value>A wise mage wielding magical powers</value>
+  </data>
+  <data name="Class_Rogue_Desc" xml:space="preserve">
+    <value>A cunning rogue with stealth and agility</value>
+  </data>
+  <data name="Class_Cleric_Desc" xml:space="preserve">
+    <value>A holy cleric with healing abilities</value>
+  </data>
+  
+  <!-- Game Messages -->
+  <data name="Game_Welcome" xml:space="preserve">
+    <value>=== Welcome to the Realm of Aethermoor ===</value>
+  </data>
+  <data name="Game_WelcomePlayer" xml:space="preserve">
+    <value>Welcome, {0} the {1}!</value>
+  </data>
+  <data name="Game_AdventureBegins" xml:space="preserve">
+    <value>Your adventure begins in the peaceful village of Elderbrook.</value>
+  </data>
+  <data name="Game_HelpHint" xml:space="preserve">
+    <value>Type 'help' for a list of commands, or 'look' to examine your surroundings.</value>
+  </data>
+  <data name="Game_StartFirst" xml:space="preserve">
+    <value>Start a new game first!</value>
+  </data>
+  <data name="Game_UnknownCommand" xml:space="preserve">
+    <value>I don't understand that command. Type 'help' for available commands.</value>
+  </data>
+  
+  <!-- Combat -->
+  <data name="Combat_EnemyAppears" xml:space="preserve">
+    <value>A {0} appears! Combat begins!</value>
+  </data>
+  <data name="Combat_EnemyHealth" xml:space="preserve">
+    <value>Enemy Health: {0}/{1}</value>
+  </data>
+  <data name="Combat_Commands" xml:space="preserve">
+    <value>Commands: attack, defend, use [item], flee</value>
+  </data>
+  <data name="Combat_InCombat" xml:space="preserve">
+    <value>⚔️ IN COMBAT ⚔️</value>
+  </data>
+  <data name="Combat_YouAttack" xml:space="preserve">
+    <value>You attack {0} for {1} damage!</value>
+  </data>
+  <data name="Combat_EnemyAttacks" xml:space="preserve">
+    <value>{0} attacks you for {1} damage!</value>
+  </data>
+  <data name="Combat_YouDefend" xml:space="preserve">
+    <value>You raise your guard, reducing incoming damage.</value>
+  </data>
+  <data name="Combat_Victory" xml:space="preserve">
+    <value>You defeated the {0}!</value>
+  </data>
+  <data name="Combat_ExpGold" xml:space="preserve">
+    <value>You gained {0} experience and {1} gold!</value>
+  </data>
+  <data name="Combat_Defeat" xml:space="preserve">
+    <value>You have been defeated!</value>
+  </data>
+  <data name="Combat_Revive" xml:space="preserve">
+    <value>You wake up back in the village, wounded but alive.</value>
+  </data>
+  <data name="Combat_FleeSuccess" xml:space="preserve">
+    <value>You successfully flee from combat!</value>
+  </data>
+  <data name="Combat_FleeFail" xml:space="preserve">
+    <value>You failed to escape!</value>
+  </data>
+  
+  <!-- Level Up -->
+  <data name="LevelUp_Congratulations" xml:space="preserve">
+    <value>🎉 LEVEL UP! You are now level {0}!</value>
+  </data>
+  <data name="LevelUp_HealthIncrease" xml:space="preserve">
+    <value>Health increased to {0}!</value>
+  </data>
+  <data name="LevelUp_AttackIncrease" xml:space="preserve">
+    <value>Attack increased to {0}!</value>
+  </data>
+  <data name="LevelUp_DefenseIncrease" xml:space="preserve">
+    <value>Defense increased to {0}!</value>
+  </data>
+  <data name="LevelUp_SkillPoints" xml:space="preserve">
+    <value>You gained 5 skill points! Use 'skills' to spend them.</value>
+  </data>
+  
+  <!-- Status Bar -->
+  <data name="Status_Ready" xml:space="preserve">
+    <value>Ready to start your adventure...</value>
+  </data>
+  <data name="Status_Health" xml:space="preserve">
+    <value>Health: {0}/{1}</value>
+  </data>
+  <data name="Status_Level" xml:space="preserve">
+    <value>Lvl: {0}</value>
+  </data>
+  <data name="Status_Gold" xml:space="preserve">
+    <value>Gold: {0}</value>
+  </data>
+  <data name="Status_Location" xml:space="preserve">
+    <value>Location: {0}</value>
+  </data>
+  <data name="Status_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Status_ExpGain" xml:space="preserve">
+    <value>💫 +{0} EXP</value>
+  </data>
+  <data name="Status_LevelUpMsg" xml:space="preserve">
+    <value> | LEVEL UP! Now level {0}! 🎉</value>
+  </data>
+  <data name="Status_GoldGain" xml:space="preserve">
+    <value>💰 +{0} Gold</value>
+  </data>
+  <data name="Status_GoldLoss" xml:space="preserve">
+    <value>💸 {0} Gold</value>
+  </data>
+  
+  <!-- Mini Map -->
+  <data name="MiniMap_Current" xml:space="preserve">
+    <value>Current: {0}</value>
+  </data>
+  <data name="MiniMap_ClickToTravel" xml:space="preserve">
+    <value>Click locations to travel</value>
+  </data>
+  <data name="MiniMap_OpenFullMap" xml:space="preserve">
+    <value>Open Full Map</value>
+  </data>
+  <data name="MiniMap_Selected" xml:space="preserve">
+    <value>Selected: {0}</value>
+  </data>
+  <data name="MiniMap_Hover" xml:space="preserve">
+    <value>Hover: {0}</value>
+  </data>
+  <data name="MiniMap_You" xml:space="preserve">
+    <value>You</value>
+  </data>
+  <data name="MiniMap_Visited" xml:space="preserve">
+    <value>Visited</value>
+  </data>
+  <data name="MiniMap_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  
+  <!-- Quick Actions -->
+  <data name="QuickAction_Look" xml:space="preserve">
+    <value>Look</value>
+  </data>
+  <data name="QuickAction_Stats" xml:space="preserve">
+    <value>Stats</value>
+  </data>
+  <data name="QuickAction_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="QuickAction_Load" xml:space="preserve">
+    <value>Load</value>
+  </data>
+  <data name="QuickAction_Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="QuickAction_Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  
+  <!-- Group Boxes -->
+  <data name="Group_CharacterStats" xml:space="preserve">
+    <value>Character Stats</value>
+  </data>
+  <data name="Group_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Group_MiniMap" xml:space="preserve">
+    <value>Mini Map</value>
+  </data>
+  <data name="Group_QuickActions" xml:space="preserve">
+    <value>Quick Actions</value>
+  </data>
+  
+  <!-- Common -->
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Common_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Common_Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+</root> 

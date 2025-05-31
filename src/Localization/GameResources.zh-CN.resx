@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Application Title -->
+  <data name="AppTitle" xml:space="preserve">
+    <value>以太摩尔之境 - 角色扮演冒险游戏</value>
+  </data>
+  
+  <!-- Main Menu -->
+  <data name="Menu_Game" xml:space="preserve">
+    <value>游戏(&amp;G)</value>
+  </data>
+  <data name="Menu_NewGame" xml:space="preserve">
+    <value>新游戏(&amp;N)</value>
+  </data>
+  <data name="Menu_SaveGame" xml:space="preserve">
+    <value>保存游戏(&amp;S)</value>
+  </data>
+  <data name="Menu_LoadGame" xml:space="preserve">
+    <value>载入游戏(&amp;L)</value>
+  </data>
+  <data name="Menu_Exit" xml:space="preserve">
+    <value>退出(&amp;X)</value>
+  </data>
+  <data name="Menu_Character" xml:space="preserve">
+    <value>角色(&amp;C)</value>
+  </data>
+  <data name="Menu_Inventory" xml:space="preserve">
+    <value>背包(&amp;I)</value>
+  </data>
+  <data name="Menu_Stats" xml:space="preserve">
+    <value>属性(&amp;S)</value>
+  </data>
+  <data name="Menu_Skills" xml:space="preserve">
+    <value>技能(&amp;K)</value>
+  </data>
+  <data name="Menu_Equipment" xml:space="preserve">
+    <value>装备(&amp;E)</value>
+  </data>
+  <data name="Menu_World" xml:space="preserve">
+    <value>世界(&amp;W)</value>
+  </data>
+  <data name="Menu_Map" xml:space="preserve">
+    <value>地图(&amp;M)</value>
+  </data>
+  <data name="Menu_Locations" xml:space="preserve">
+    <value>地点(&amp;L)</value>
+  </data>
+  <data name="Menu_Settings" xml:space="preserve">
+    <value>设置(&amp;S)</value>
+  </data>
+  <data name="Menu_Themes" xml:space="preserve">
+    <value>主题(&amp;T)</value>
+  </data>
+  <data name="Menu_FontSize" xml:space="preserve">
+    <value>字体大小(&amp;F)</value>
+  </data>
+  <data name="Menu_GameSettings" xml:space="preserve">
+    <value>游戏设置(&amp;G)</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>语言(&amp;L)</value>
+  </data>
+  <data name="Menu_Tools" xml:space="preserve">
+    <value>工具(&amp;T)</value>
+  </data>
+  <data name="Menu_AssetEditor" xml:space="preserve">
+    <value>资源编辑器(&amp;A)</value>
+  </data>
+  <data name="Menu_DataValidation" xml:space="preserve">
+    <value>数据验证(&amp;D)</value>
+  </data>
+  <data name="Menu_Help" xml:space="preserve">
+    <value>帮助(&amp;H)</value>
+  </data>
+  <data name="Menu_Commands" xml:space="preserve">
+    <value>命令(&amp;C)</value>
+  </data>
+  <data name="Menu_Controls" xml:space="preserve">
+    <value>控制(&amp;C)</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>关于(&amp;A)</value>
+  </data>
+  
+  <!-- Game Console -->
+  <data name="GameConsole_Title" xml:space="preserve">
+    <value>游戏控制台</value>
+  </data>
+  <data name="GameConsole_Clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="GameConsole_ScrollTop" xml:space="preserve">
+    <value>↑ 顶部</value>
+  </data>
+  <data name="GameConsole_ScrollBottom" xml:space="preserve">
+    <value>↓ 底部</value>
+  </data>
+  
+  <!-- Input Controls -->
+  <data name="Input_Submit" xml:space="preserve">
+    <value>提交</value>
+  </data>
+  <data name="Input_Inventory" xml:space="preserve">
+    <value>背包</value>
+  </data>
+  <data name="Input_Help" xml:space="preserve">
+    <value>帮助 (F1)</value>
+  </data>
+  <data name="Input_Placeholder" xml:space="preserve">
+    <value>输入命令...</value>
+  </data>
+  <data name="Input_HistoryHint" xml:space="preserve">
+    <value>使用 ↑↓ 查看命令历史 | 最近命令 →</value>
+  </data>
+  <data name="Input_Recent" xml:space="preserve">
+    <value>最近: {0}...</value>
+  </data>
+  
+  <!-- Character Creation -->
+  <data name="CharCreate_Title" xml:space="preserve">
+    <value>创建角色</value>
+  </data>
+  <data name="CharCreate_Hero" xml:space="preserve">
+    <value>创建你的英雄</value>
+  </data>
+  <data name="CharCreate_Name" xml:space="preserve">
+    <value>角色姓名：</value>
+  </data>
+  <data name="CharCreate_Class" xml:space="preserve">
+    <value>角色职业：</value>
+  </data>
+  <data name="CharCreate_Create" xml:space="preserve">
+    <value>创建角色</value>
+  </data>
+  <data name="CharCreate_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="CharCreate_InvalidName" xml:space="preserve">
+    <value>请输入角色姓名。</value>
+  </data>
+  <data name="CharCreate_NameTooLong" xml:space="preserve">
+    <value>角色姓名不能超过20个字符。</value>
+  </data>
+  <data name="CharCreate_SelectClass" xml:space="preserve">
+    <value>选择一个角色职业查看属性...</value>
+  </data>
+  
+  <!-- Character Classes -->
+  <data name="Class_Warrior" xml:space="preserve">
+    <value>战士</value>
+  </data>
+  <data name="Class_Mage" xml:space="preserve">
+    <value>法师</value>
+  </data>
+  <data name="Class_Rogue" xml:space="preserve">
+    <value>盗贼</value>
+  </data>
+  <data name="Class_Cleric" xml:space="preserve">
+    <value>牧师</value>
+  </data>
+  <data name="Class_Warrior_Desc" xml:space="preserve">
+    <value>精通战斗的勇敢战士</value>
+  </data>
+  <data name="Class_Mage_Desc" xml:space="preserve">
+    <value>掌握魔法力量的智慧法师</value>
+  </data>
+  <data name="Class_Rogue_Desc" xml:space="preserve">
+    <value>具有隐秘与敏捷能力的狡猾盗贼</value>
+  </data>
+  <data name="Class_Cleric_Desc" xml:space="preserve">
+    <value>拥有治疗能力的神圣牧师</value>
+  </data>
+  
+  <!-- Game Messages -->
+  <data name="Game_Welcome" xml:space="preserve">
+    <value>=== 欢迎来到以太摩尔之境 ===</value>
+  </data>
+  <data name="Game_WelcomePlayer" xml:space="preserve">
+    <value>欢迎，{1} {0}！</value>
+  </data>
+  <data name="Game_AdventureBegins" xml:space="preserve">
+    <value>你的冒险从宁静的长者布鲁克村开始。</value>
+  </data>
+  <data name="Game_HelpHint" xml:space="preserve">
+    <value>输入 'help' 查看命令列表，或者输入 'look' 观察周围环境。</value>
+  </data>
+  <data name="Game_StartFirst" xml:space="preserve">
+    <value>请先开始新游戏！</value>
+  </data>
+  <data name="Game_UnknownCommand" xml:space="preserve">
+    <value>我不理解这个命令。输入 'help' 查看可用命令。</value>
+  </data>
+  
+  <!-- Combat -->
+  <data name="Combat_EnemyAppears" xml:space="preserve">
+    <value>一只{0}出现了！战斗开始！</value>
+  </data>
+  <data name="Combat_EnemyHealth" xml:space="preserve">
+    <value>敌人生命值：{0}/{1}</value>
+  </data>
+  <data name="Combat_Commands" xml:space="preserve">
+    <value>命令：attack（攻击）, defend（防御）, use [物品], flee（逃跑）</value>
+  </data>
+  <data name="Combat_InCombat" xml:space="preserve">
+    <value>⚔️ 战斗中 ⚔️</value>
+  </data>
+  <data name="Combat_YouAttack" xml:space="preserve">
+    <value>你攻击{0}造成{1}点伤害！</value>
+  </data>
+  <data name="Combat_EnemyAttacks" xml:space="preserve">
+    <value>{0}攻击你造成{1}点伤害！</value>
+  </data>
+  <data name="Combat_YouDefend" xml:space="preserve">
+    <value>你举起防守，减少受到的伤害。</value>
+  </data>
+  <data name="Combat_Victory" xml:space="preserve">
+    <value>你击败了{0}！</value>
+  </data>
+  <data name="Combat_ExpGold" xml:space="preserve">
+    <value>你获得了{0}点经验和{1}金币！</value>
+  </data>
+  <data name="Combat_Defeat" xml:space="preserve">
+    <value>你被击败了！</value>
+  </data>
+  <data name="Combat_Revive" xml:space="preserve">
+    <value>你在村庄中醒来，受伤但还活着。</value>
+  </data>
+  <data name="Combat_FleeSuccess" xml:space="preserve">
+    <value>你成功从战斗中逃脱！</value>
+  </data>
+  <data name="Combat_FleeFail" xml:space="preserve">
+    <value>你逃跑失败！</value>
+  </data>
+  
+  <!-- Level Up -->
+  <data name="LevelUp_Congratulations" xml:space="preserve">
+    <value>🎉 升级了！你现在是{0}级！</value>
+  </data>
+  <data name="LevelUp_HealthIncrease" xml:space="preserve">
+    <value>生命值增加到{0}！</value>
+  </data>
+  <data name="LevelUp_AttackIncrease" xml:space="preserve">
+    <value>攻击力增加到{0}！</value>
+  </data>
+  <data name="LevelUp_DefenseIncrease" xml:space="preserve">
+    <value>防御力增加到{0}！</value>
+  </data>
+  <data name="LevelUp_SkillPoints" xml:space="preserve">
+    <value>你获得了5个技能点！使用 'skills' 来分配它们。</value>
+  </data>
+  
+  <!-- Status Bar -->
+  <data name="Status_Ready" xml:space="preserve">
+    <value>准备开始你的冒险...</value>
+  </data>
+  <data name="Status_Health" xml:space="preserve">
+    <value>生命值：{0}/{1}</value>
+  </data>
+  <data name="Status_Level" xml:space="preserve">
+    <value>等级：{0}</value>
+  </data>
+  <data name="Status_Gold" xml:space="preserve">
+    <value>金币：{0}</value>
+  </data>
+  <data name="Status_Location" xml:space="preserve">
+    <value>位置：{0}</value>
+  </data>
+  <data name="Status_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="Status_ExpGain" xml:space="preserve">
+    <value>💫 +{0} 经验</value>
+  </data>
+  <data name="Status_LevelUpMsg" xml:space="preserve">
+    <value> | 升级了！现在是{0}级！🎉</value>
+  </data>
+  <data name="Status_GoldGain" xml:space="preserve">
+    <value>💰 +{0} 金币</value>
+  </data>
+  <data name="Status_GoldLoss" xml:space="preserve">
+    <value>💸 -{0} 金币</value>
+  </data>
+  
+  <!-- Mini Map -->
+  <data name="MiniMap_Current" xml:space="preserve">
+    <value>当前：{0}</value>
+  </data>
+  <data name="MiniMap_ClickToTravel" xml:space="preserve">
+    <value>点击地点前往</value>
+  </data>
+  <data name="MiniMap_OpenFullMap" xml:space="preserve">
+    <value>打开完整地图</value>
+  </data>
+  <data name="MiniMap_Selected" xml:space="preserve">
+    <value>已选择：{0}</value>
+  </data>
+  <data name="MiniMap_Hover" xml:space="preserve">
+    <value>悬停：{0}</value>
+  </data>
+  <data name="MiniMap_You" xml:space="preserve">
+    <value>你</value>
+  </data>
+  <data name="MiniMap_Visited" xml:space="preserve">
+    <value>已访问</value>
+  </data>
+  <data name="MiniMap_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  
+  <!-- Quick Actions -->
+  <data name="QuickAction_Look" xml:space="preserve">
+    <value>观察</value>
+  </data>
+  <data name="QuickAction_Stats" xml:space="preserve">
+    <value>属性</value>
+  </data>
+  <data name="QuickAction_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="QuickAction_Load" xml:space="preserve">
+    <value>载入</value>
+  </data>
+  <data name="QuickAction_Help" xml:space="preserve">
+    <value>帮助</value>
+  </data>
+  <data name="QuickAction_Exit" xml:space="preserve">
+    <value>退出</value>
+  </data>
+  
+  <!-- Group Boxes -->
+  <data name="Group_CharacterStats" xml:space="preserve">
+    <value>角色属性</value>
+  </data>
+  <data name="Group_Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Group_MiniMap" xml:space="preserve">
+    <value>小地图</value>
+  </data>
+  <data name="Group_QuickActions" xml:space="preserve">
+    <value>快捷操作</value>
+  </data>
+  
+  <!-- Common -->
+  <data name="Common_OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>否</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Common_Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Common_Information" xml:space="preserve">
+    <value>信息</value>
+  </data>
+</root> 
