@@ -21,6 +21,25 @@ namespace WinFormsApp1
 
         public bool HasUnsavedChanges { get; private set; }
 
+        private string GetSaveDirectory()
+        {
+            // Create save directory in user's Documents/RealmOfAethermoor/SavedGames
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string gameFolder = Path.Combine(documentsPath, "RealmOfAethermoor");
+            string saveFolder = Path.Combine(gameFolder, "SavedGames");
+            
+            // Ensure the directory exists
+            Directory.CreateDirectory(saveFolder);
+            
+            return saveFolder;
+        }
+
+        private string GetSaveFilePath(string saveName)
+        {
+            string saveDir = GetSaveDirectory();
+            return Path.Combine(saveDir, $"{saveName}.json");
+        }
+
         public GameEngine(Form1 form)
         {
             gameForm = form;
@@ -159,6 +178,10 @@ namespace WinFormsApp1
                     break;
                 case "load":
                     LoadGame(args.FirstOrDefault());
+                    break;
+                case "saves":
+                case "list":
+                    ListSaveFiles();
                     break;
                 case "quit":
                 case "exit":
@@ -540,10 +563,20 @@ namespace WinFormsApp1
             gameForm.DisplayText("Interaction: look, take [item], use [item]");
             gameForm.DisplayText("Character: inventory (inv), stats, help");
             gameForm.DisplayText("Combat: attack [enemy], defend, flee");
-            gameForm.DisplayText("Game: save [name], load [name], quit");
+            gameForm.DisplayText("Game: save [name], load [name], saves/list, quit");
+            gameForm.DisplayText("");
+            gameForm.DisplayText("Save Commands:");
+            gameForm.DisplayText("  save - Quick save with timestamp");
+            gameForm.DisplayText("  save [name] - Save with custom name");
+            gameForm.DisplayText("  load - Load quick save");
+            gameForm.DisplayText("  load [name] - Load specific save");
+            gameForm.DisplayText("  saves/list - Show all available saves");
             gameForm.DisplayText("");
             gameForm.DisplayText("Keyboard shortcuts:");
             gameForm.DisplayText("Tab - Quick inventory, Ctrl+S - Quick save, Ctrl+L - Quick load, F1 - Help");
+            gameForm.DisplayText("");
+            string saveDir = GetSaveDirectory();
+            gameForm.DisplayText($"Save files are stored in: {saveDir}", Color.Gray);
             gameForm.DisplayText("");
         }
 
@@ -551,7 +584,16 @@ namespace WinFormsApp1
         {
             try
             {
-                saveName = saveName ?? "quicksave";
+                // Generate a timestamped save name if none provided
+                if (string.IsNullOrEmpty(saveName))
+                {
+                    saveName = $"AutoSave_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
+                }
+                else if (saveName == "quicksave")
+                {
+                    saveName = "QuickSave";
+                }
+
                 var saveData = new GameSave
                 {
                     Player = player,
@@ -561,10 +603,11 @@ namespace WinFormsApp1
                 };
 
                 string saveJson = JsonSerializer.Serialize(saveData, new JsonSerializerOptions { WriteIndented = true });
-                Directory.CreateDirectory("saves");
-                File.WriteAllText($"saves/{saveName}.json", saveJson);
+                string saveFilePath = GetSaveFilePath(saveName);
+                File.WriteAllText(saveFilePath, saveJson);
                 
                 gameForm.DisplayText($"Game saved as '{saveName}'.", Color.Green);
+                gameForm.DisplayText($"Save location: {saveFilePath}", Color.Gray);
                 HasUnsavedChanges = false;
             }
             catch (Exception ex)
@@ -577,16 +620,22 @@ namespace WinFormsApp1
         {
             try
             {
-                saveName = saveName ?? "quicksave";
-                string saveFile = $"saves/{saveName}.json";
+                // Handle default save name
+                if (string.IsNullOrEmpty(saveName) || saveName == "quicksave")
+                {
+                    saveName = "QuickSave";
+                }
+
+                string saveFilePath = GetSaveFilePath(saveName);
                 
-                if (!File.Exists(saveFile))
+                if (!File.Exists(saveFilePath))
                 {
                     gameForm.DisplayText($"Save file '{saveName}' not found.", Color.Red);
+                    gameForm.DisplayText($"Looked in: {saveFilePath}", Color.Gray);
                     return;
                 }
 
-                string saveJson = File.ReadAllText(saveFile);
+                string saveJson = File.ReadAllText(saveFilePath);
                 var saveData = JsonSerializer.Deserialize<GameSave>(saveJson);
 
                 if (saveData?.Player != null && saveData.Locations != null && !string.IsNullOrEmpty(saveData.CurrentLocationKey))
@@ -597,6 +646,7 @@ namespace WinFormsApp1
 
                     gameForm.ClearScreen();
                     gameForm.DisplayText($"Game loaded from '{saveName}'.", Color.Green);
+                    gameForm.DisplayText($"Loaded from: {saveFilePath}", Color.Gray);
                     gameForm.DisplayText("");
                     
                     // Enable game controls since we now have a loaded game
@@ -635,6 +685,48 @@ namespace WinFormsApp1
         public string GetCurrentLocationKey()
         {
             return locations.FirstOrDefault(l => l.Value == currentLocation).Key ?? "village";
+        }
+
+        public void ListSaveFiles()
+        {
+            try
+            {
+                string saveDir = GetSaveDirectory();
+                var saveFiles = Directory.GetFiles(saveDir, "*.json")
+                    .Select(f => Path.GetFileNameWithoutExtension(f))
+                    .OrderByDescending(f => File.GetLastWriteTime(Path.Combine(saveDir, $"{f}.json")))
+                    .ToList();
+
+                if (saveFiles.Any())
+                {
+                    gameForm.DisplayText("=== Available Save Files ===", Color.Cyan);
+                    gameForm.DisplayText($"Save directory: {saveDir}", Color.Gray);
+                    gameForm.DisplayText("");
+
+                    foreach (var saveFile in saveFiles)
+                    {
+                        var filePath = Path.Combine(saveDir, $"{saveFile}.json");
+                        var lastModified = File.GetLastWriteTime(filePath);
+                        var fileSize = new FileInfo(filePath).Length;
+                        
+                        gameForm.DisplayText($"• {saveFile}", Color.Yellow);
+                        gameForm.DisplayText($"  Modified: {lastModified:yyyy-MM-dd HH:mm:ss}");
+                        gameForm.DisplayText($"  Size: {fileSize:N0} bytes");
+                        gameForm.DisplayText("");
+                    }
+                    
+                    gameForm.DisplayText("Use 'load [filename]' to load a specific save.", Color.Cyan);
+                }
+                else
+                {
+                    gameForm.DisplayText("No save files found.", Color.Yellow);
+                    gameForm.DisplayText($"Save directory: {saveDir}", Color.Gray);
+                }
+            }
+            catch (Exception ex)
+            {
+                gameForm.DisplayText($"Failed to list save files: {ex.Message}", Color.Red);
+            }
         }
     }
 } 
