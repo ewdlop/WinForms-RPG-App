@@ -35,6 +35,7 @@ namespace WinFormsApp1
         private readonly ILocationManager _locationManager;
         private readonly ISkillManager _skillManager;
         private readonly IGameCoordinatorService _gameCoordinator;
+        private readonly IUIManager _uiManager;
         private readonly ILogger<Form1> _logger;
 
         public Form1(IServiceProvider serviceProvider)
@@ -50,16 +51,17 @@ namespace WinFormsApp1
             _locationManager = serviceProvider.GetRequiredService<ILocationManager>();
             _skillManager = serviceProvider.GetRequiredService<ISkillManager>();
             _gameCoordinator = serviceProvider.GetRequiredService<IGameCoordinatorService>();
+            _uiManager = serviceProvider.GetRequiredService<IUIManager>();
             _logger = serviceProvider.GetRequiredService<ILogger<Form1>>();
 
-            _logger.LogInformation("Initializing Form1 with dependency injection and advanced services");
+            _logger.LogInformation("Initializing Form1 with dependency injection and UIManager");
 
             InitializeComponent();
             InitializeGameUI(); // Initialize the UI before subscribing to events
             SubscribeToEvents();
             SetGameControlsEnabled(false); // Disable until game starts
 
-            _logger.LogInformation("Form1 initialized successfully with GameCoordinatorService");
+            _logger.LogInformation("Form1 initialized successfully with UIManager and GameCoordinatorService");
         }
 
         private void SubscribeToEvents()
@@ -82,6 +84,15 @@ namespace WinFormsApp1
             _eventManager.Subscribe<SkillUsedEvent>(OnSkillUsed);
             _eventManager.Subscribe<CommandProcessedEvent>(OnCommandProcessed);
             _eventManager.Subscribe<GameMessageEvent>(OnGameMessage);
+            
+            // Subscribe to UI events
+            _eventManager.Subscribe<DisplayTextEvent>(OnDisplayText);
+            _eventManager.Subscribe<DisplayFormattedMessageEvent>(OnDisplayFormattedMessage);
+            _eventManager.Subscribe<NotificationEvent>(OnNotification);
+            _eventManager.Subscribe<UIControlStateChangedEvent>(OnUIControlStateChanged);
+            _eventManager.Subscribe<MenuStateChangedEvent>(OnMenuStateChanged);
+            _eventManager.Subscribe<ProgressUpdateEvent>(OnProgressUpdate);
+            _eventManager.Subscribe<ThemeChangedEvent>(OnThemeChanged);
         }
 
         private void UnsubscribeFromEvents()
@@ -104,6 +115,15 @@ namespace WinFormsApp1
             _eventManager.ClearSubscriptions<SkillUsedEvent>();
             _eventManager.ClearSubscriptions<CommandProcessedEvent>();
             _eventManager.ClearSubscriptions<GameMessageEvent>();
+            
+            // Unsubscribe from UI events
+            _eventManager.ClearSubscriptions<DisplayTextEvent>();
+            _eventManager.ClearSubscriptions<DisplayFormattedMessageEvent>();
+            _eventManager.ClearSubscriptions<NotificationEvent>();
+            _eventManager.ClearSubscriptions<UIControlStateChangedEvent>();
+            _eventManager.ClearSubscriptions<MenuStateChangedEvent>();
+            _eventManager.ClearSubscriptions<ProgressUpdateEvent>();
+            _eventManager.ClearSubscriptions<ThemeChangedEvent>();
         }
 
         private void InitializeGameUI()
@@ -521,81 +541,81 @@ namespace WinFormsApp1
         // Event handlers for custom controls
         private void GameInputControl_CommandSubmitted(object sender, string command)
         {
-            DisplayText($"> {command}", Color.Yellow);
-            _gameManager?.ProcessCommand(command);
+            _uiManager.DisplayText($"> {command}", Color.Yellow);
+            _gameManager.ProcessCommand(command);
         }
 
         private void MiniMapControl_LocationClicked(object sender, string location)
         {
-            DisplayText($"You want to travel to {location}. Use movement commands to get there.", Color.Cyan);
+            _uiManager.DisplayText($"You want to travel to {location}. Use movement commands to get there.", Color.Cyan);
         }
 
         // Event handlers for new features
         private void ShowInventory(object sender, EventArgs e)
         {
-            if (_gameManager != null)
+            if (_gameManager.CurrentGameState != GameState.Running)
             {
-                // This will be implemented when we have access to the player
-                try
-                {
-                    var inventoryForm = _serviceProvider.GetRequiredService<InventoryForm>();
-                    inventoryForm.ShowDialog();
-                }
-                catch
-                {
-                    DisplayText("Start a new game first!", Color.Red);
-                }
+                _uiManager.DisplayText("Start a new game first!", Color.Red, true);
+                return;
+            }
+
+            try
+            {
+                var inventoryForm = _serviceProvider.GetRequiredService<InventoryForm>();
+                inventoryForm.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening inventory form");
+                _uiManager.ShowNotification("Error", "Failed to open inventory", NotificationType.Error);
             }
         }
 
         private void ShowMap(object sender, EventArgs e)
         {
-            if (_gameManager != null)
+            if (_gameManager.CurrentGameState != GameState.Running)
             {
-                try
-                {
-                    var mapForm = _serviceProvider.GetRequiredService<MapForm>();
-                    mapForm.ShowDialog();
-                }
-                catch
-                {
-                    DisplayText("Start a new game first!", Color.Red);
-                }
+                _uiManager.DisplayText("Start a new game first!", Color.Red, true);
+                return;
+            }
+
+            try
+            {
+                var mapForm = _serviceProvider.GetRequiredService<MapForm>();
+                mapForm.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening map form");
+                _uiManager.ShowNotification("Error", "Failed to open map", NotificationType.Error);
             }
         }
 
         private void ShowEquipment(object sender, EventArgs e)
         {
-            if (_gameManager != null)
+            if (_gameManager.CurrentGameState != GameState.Running)
             {
-                try
-                {
-                    var player = _playerManager.CurrentPlayer;
-                    string equipment = "=== Equipment ===\n";
-                    equipment += $"Weapon: {(player.EquippedWeapon?.Name ?? "None")}\n";
-                    equipment += $"Armor: {(player.EquippedArmor?.Name ?? "None")}\n\n";
-                    equipment += $"Total Attack: {player.GetTotalAttack()}\n";
-                    equipment += $"Total Defense: {player.GetTotalDefense()}";
-                    
-                    MessageBox.Show(equipment, "Equipment", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                catch
-                {
-                    DisplayText("Start a new game first!", Color.Red);
-                }
+                _uiManager.DisplayText("Start a new game first!", Color.Red, true);
+                return;
             }
+
+            _uiManager.ShowCharacterStats();
         }
 
         private void ShowLocationList(object sender, EventArgs e)
         {
-            DisplayText("=== Known Locations ===", Color.Cyan);
-            DisplayText("• Village of Elderbrook - A peaceful starting town");
-            DisplayText("• Dark Forest - Dangerous woods with wolves");
-            DisplayText("• Grassy Plains - Open fields with wild boars");
-            DisplayText("• Ancient Cave - Mysterious cavern with treasures");
-            DisplayText("• Ancient Ruins - Crumbling structures with secrets");
-            DisplayText("• Dragon's Lair - The ultimate challenge");
-            DisplayText("");
+            var locationLines = new List<FormattedTextLine>
+            {
+                new FormattedTextLine("=== Known Locations ===", Color.Cyan, true),
+                new FormattedTextLine("• Village of Elderbrook - A peaceful starting town", Color.White),
+                new FormattedTextLine("• Dark Forest - Dangerous woods with wolves", Color.White),
+                new FormattedTextLine("• Grassy Plains - Open fields with wild boars", Color.White),
+                new FormattedTextLine("• Ancient Cave - Mysterious cavern with treasures", Color.White),
+                new FormattedTextLine("• Ancient Ruins - Crumbling structures with secrets", Color.White),
+                new FormattedTextLine("• Dragon's Lair - The ultimate challenge", Color.White)
+            };
+
+            _uiManager.DisplayFormattedMessage("Locations", locationLines);
         }
 
         private void ShowThemeSelection(object sender, EventArgs e)
@@ -644,7 +664,7 @@ namespace WinFormsApp1
                         gameTextDisplayControl.SetFont(newFont);
                     }
                     
-                    DisplayText("Settings applied successfully!", Color.Green);
+                    _uiManager.DisplayText("Settings applied successfully!", Color.Green);
                 }
             }
         }
@@ -686,13 +706,14 @@ namespace WinFormsApp1
         {
             try
             {
-                AssetEditorForm.ShowAssetEditor();
-                DisplayText("Asset Editor opened. You can now edit game data files.", Color.Cyan);
+                var assetEditorForm = new AssetEditorForm();
+                assetEditorForm.Show();
+                _uiManager.DisplayText("Asset Editor opened. You can now edit game data files.", Color.Cyan);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error opening Asset Editor:\n{ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _logger.LogError(ex, "Error opening asset editor");
+                _uiManager.ShowNotification("Error", "Failed to open Asset Editor", NotificationType.Error);
             }
         }
 
@@ -764,7 +785,8 @@ namespace WinFormsApp1
 
         public void DisplayText(string text, Color? color = null)
         {
-            gameTextDisplayControl?.DisplayText(text, color);
+            // Delegate to UIManager
+            _uiManager.DisplayText(text, color);
         }
 
         private void ApplyTheme(string themeName)
@@ -858,345 +880,310 @@ namespace WinFormsApp1
 
         private void OnGameStarted(GameStartedEvent e)
         {
-            // Enable game controls when game starts
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                SetGameControlsEnabled(true);
-                DisplayText("=== Welcome to the Realm of Aethermoor ===", Color.Green);
-                DisplayText($"Welcome, {e.Player.Name} the {e.Player.CharacterClass}!", Color.Cyan);
-                DisplayText("Your adventure begins! Type 'help' for commands or 'look' to examine your surroundings.", Color.White);
-                UpdateStatus($"Game started - Playing as {e.Player.Name}");
-                
-                // Update character display
-                characterStatsControl?.UpdateStats(e.Player);
-                progressDisplayControl?.UpdateProgress(e.Player);
-            });
+                this.Invoke(new Action(() => OnGameStarted(e)));
+                return;
+            }
+
+            // UIManager will handle the welcome message through its own event handler
+            SetGameControlsEnabled(true);
+            characterStatsControl?.UpdateStats(e.Player);
+            progressDisplayControl?.UpdateHealth(e.Player.Health, e.Player.MaxHealth);
+            progressDisplayControl?.UpdateExperience(e.Player.Experience, e.Player.ExperienceToNextLevel);
+            gameStatusBarControl?.UpdateStatus($"Game started - {e.Player.Name} the {e.Player.CharacterClass}");
         }
 
         private void OnGameEnded(GameEndedEvent e)
         {
-            // Disable game controls when game ends
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                SetGameControlsEnabled(false);
-                DisplayText("=== Game Ended ===", Color.Red);
-                DisplayText(e.Reason, Color.Yellow);
-                UpdateStatus("Game ended");
-                
-                // Clear character display
-                characterStatsControl?.ClearStats();
-                progressDisplayControl?.ClearProgress();
-            });
+                this.Invoke(new Action(() => OnGameEnded(e)));
+                return;
+            }
+
+            // UIManager will handle the game ended message through its own event handler
+            SetGameControlsEnabled(false);
+            gameStatusBarControl?.UpdateStatus("Game ended");
         }
 
         private void OnPlayerStatsChanged(PlayerStatsChangedEvent e)
         {
-            // Update character stats display
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                characterStatsControl?.UpdateStats(e.Player);
-                progressDisplayControl?.UpdateProgress(e.Player);
-                
-                // Show stat change message if significant
-                if (e.StatType != StatType.Health && e.StatType != StatType.Experience) // Don't spam for frequent changes
-                {
-                    DisplayText($"{e.StatType} changed: {e.OldValue} → {e.NewValue}", Color.Cyan);
-                }
-            });
+                this.Invoke(new Action(() => OnPlayerStatsChanged(e)));
+                return;
+            }
+
+            // Update UI controls
+            characterStatsControl?.UpdateStats(e.Player);
+            
+            // Update progress bars based on stat type
+            switch (e.StatType)
+            {
+                case StatType.Health:
+                case StatType.MaxHealth:
+                    progressDisplayControl?.UpdateHealth(e.Player.Health, e.Player.MaxHealth);
+                    break;
+                case StatType.Experience:
+                    progressDisplayControl?.UpdateExperience(e.Player.Experience, e.Player.ExperienceToNextLevel);
+                    break;
+            }
+
+            // Show stat change notification for significant changes
+            if (Math.Abs(e.NewValue - e.OldValue) > 0)
+            {
+                _uiManager.DisplayText($"{e.StatType} changed: {e.OldValue} → {e.NewValue}", Color.Cyan);
+            }
         }
 
         private void OnPlayerLeveledUp(PlayerLeveledUpEvent e)
         {
-            // Show level up celebration
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                DisplayText("", Color.White);
-                DisplayText("*** LEVEL UP! ***", Color.Gold);
-                DisplayText($"Congratulations! You reached level {e.NewLevel}!", Color.Gold);
-                DisplayText($"You gained {e.SkillPointsGained} skill points!", Color.Magenta);
-                DisplayText("", Color.White);
-                
-                // Update displays
-                characterStatsControl?.UpdateStats(e.Player);
-                progressDisplayControl?.UpdateProgress(e.Player);
-                
-                // Show visual feedback
-                ShowLevelUp(e.OldLevel, e.NewLevel);
-            });
+                this.Invoke(new Action(() => OnPlayerLeveledUp(e)));
+                return;
+            }
+
+            // UIManager will handle the level up message through its own event handler
+            characterStatsControl?.UpdateStats(e.Player);
+            progressDisplayControl?.UpdateExperience(e.Player.Experience, e.Player.ExperienceToNextLevel);
+            
+            // Update status bar
+            gameStatusBarControl?.UpdateStatus($"Level Up! Now level {e.NewLevel}");
         }
 
         private void OnPlayerHealthChanged(PlayerHealthChangedEvent e)
         {
-            // Update health display
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                progressDisplayControl?.UpdateHealth(e.NewHealth, e.MaxHealth);
+                this.Invoke(new Action(() => OnPlayerHealthChanged(e)));
+                return;
+            }
+
+            progressDisplayControl?.UpdateHealth(e.NewHealth, e.Player.MaxHealth);
+            characterStatsControl?.UpdateStats(e.Player);
+
+            var healthChange = e.NewHealth - e.OldHealth;
+            if (healthChange > 0)
+            {
+                _uiManager.DisplayText($"Health restored: +{healthChange} ({e.Reason})", Color.Green);
+            }
+            else if (healthChange < 0)
+            {
+                _uiManager.DisplayText($"Health lost: {Math.Abs(healthChange)} ({e.Reason})", Color.Red);
                 
-                // Show health change message for significant changes
-                int healthChange = e.NewHealth - e.OldHealth;
-                if (Math.Abs(healthChange) >= 5) // Only show for changes of 5+ health
+                // Show warning for low health
+                if (e.NewHealth <= e.Player.MaxHealth * 0.2)
                 {
-                    if (healthChange > 0)
-                    {
-                        DisplayText($"Health restored: +{healthChange} ({e.Reason})", Color.Green);
-                    }
-                    else
-                    {
-                        DisplayText($"Health lost: {healthChange} ({e.Reason})", Color.Red);
-                    }
+                    _uiManager.ShowNotification("Low Health", "Your health is critically low!", NotificationType.Warning, 5000);
                 }
-                
-                // Update status bar
-                UpdateStatus($"Health: {e.NewHealth}/{e.MaxHealth}");
-            });
+            }
         }
 
         private void OnPlayerGoldChanged(PlayerGoldChangedEvent e)
         {
-            // Update gold display
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                characterStatsControl?.UpdateStats(e.Player);
-                
-                // Show gold change message
-                int goldChange = e.NewGold - e.OldGold;
-                if (goldChange != 0)
-                {
-                    if (goldChange > 0)
-                    {
-                        DisplayText($"Gold gained: +{goldChange} ({e.Reason})", Color.Yellow);
-                        ShowGoldChange(goldChange);
-                    }
-                    else
-                    {
-                        DisplayText($"Gold spent: {goldChange} ({e.Reason})", Color.Orange);
-                    }
-                }
-            });
+                this.Invoke(new Action(() => OnPlayerGoldChanged(e)));
+                return;
+            }
+
+            characterStatsControl?.UpdateStats(e.Player);
+
+            var goldChange = e.NewGold - e.OldGold;
+            if (goldChange > 0)
+            {
+                _uiManager.DisplayText($"Gold gained: +{goldChange} ({e.Reason})", Color.Yellow);
+            }
+            else if (goldChange < 0)
+            {
+                _uiManager.DisplayText($"Gold spent: {Math.Abs(goldChange)} ({e.Reason})", Color.Orange);
+            }
         }
 
         private void OnPlayerExperienceGained(PlayerExperienceGainedEvent e)
         {
-            // Update experience display
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                progressDisplayControl?.UpdateExperience(e.TotalExperience, e.Player.ExperienceToNextLevel);
-                
-                // Show experience gain message
-                if (e.ExperienceGained > 0)
-                {
-                    DisplayText($"Experience gained: +{e.ExperienceGained} ({e.Source})", Color.Cyan);
-                    ShowExperienceGain(e.ExperienceGained);
-                }
-            });
+                this.Invoke(new Action(() => OnPlayerExperienceGained(e)));
+                return;
+            }
+
+            progressDisplayControl?.UpdateExperience(e.Player.Experience, e.Player.ExperienceToNextLevel);
+            characterStatsControl?.UpdateStats(e.Player);
+
+            _uiManager.DisplayText($"Experience gained: +{e.ExperienceGained} ({e.Source})", Color.Cyan);
         }
 
         private void OnLocationChanged(LocationChangedEvent e)
         {
-            // Update location display
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                DisplayText("", Color.White);
-                DisplayText($"=== {e.NewLocation.Name} ===", Color.Magenta);
-                DisplayText(e.NewLocation.Description, Color.White);
-                
-                if (e.IsFirstVisit)
-                {
-                    DisplayText("(First time visiting this location!)", Color.Green);
-                }
-                
-                // Update mini-map
-                miniMapControl?.UpdateCurrentLocation(e.NewLocation.Key);
-                
-                // Update status bar
-                UpdateStatus($"Location: {e.NewLocation.Name}");
-                
-                // Show available exits
-                var exits = _locationManager.GetExitsDescription();
-                DisplayText(exits, Color.Gray);
-                
-                // Show items and NPCs if any
-                var items = _locationManager.GetLocationItems();
-                if (items.Count > 0)
-                {
-                    DisplayText($"Items here: {string.Join(", ", items.Select(i => i.Name))}", Color.Yellow);
-                }
-                
-                var npcs = _locationManager.GetLocationNPCs();
-                if (npcs.Count > 0)
-                {
-                    DisplayText($"People here: {string.Join(", ", npcs)}", Color.Cyan);
-                }
-            });
+                this.Invoke(new Action(() => OnLocationChanged(e)));
+                return;
+            }
+
+            // UIManager will handle the location display through its own event handler
+            miniMapControl?.UpdateCurrentLocation(e.NewLocation.Key);
+            gameStatusBarControl?.UpdateStatus($"Current location: {e.NewLocation.Name}");
         }
 
         private void OnCombatStarted(CombatStartedEvent e)
         {
-            // Update UI for combat mode
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                DisplayText("", Color.White);
-                DisplayText("*** COMBAT STARTED ***", Color.Red);
-                DisplayText($"You are fighting: {e.Enemy.Name} (Level {e.Enemy.Level})", Color.Red);
-                DisplayText($"Enemy Health: {e.Enemy.Health}/{e.Enemy.MaxHealth}", Color.Orange);
-                DisplayText("Commands: attack, defend, flee", Color.Yellow);
-                DisplayText("", Color.White);
-                
-                SetCombatMode(true);
-                UpdateStatus($"In combat with {e.Enemy.Name}");
-            });
+                this.Invoke(new Action(() => OnCombatStarted(e)));
+                return;
+            }
+
+            // UIManager will handle the combat started message through its own event handler
+            SetCombatMode(true);
+            gameStatusBarControl?.UpdateStatus($"In combat with {e.Enemy.Name}");
         }
 
         private void OnCombatEnded(CombatEndedEvent e)
         {
-            // Update UI when combat ends
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                DisplayText("", Color.White);
-                DisplayText("*** COMBAT ENDED ***", Color.Green);
-                
-                if (e.Result == CombatResult.Victory)
-                {
-                    DisplayText($"Victory! You defeated {e.Enemy.Name}!", Color.Green);
-                    if (e.ExperienceGained > 0)
-                        DisplayText($"Experience gained: +{e.ExperienceGained}", Color.Cyan);
-                    if (e.GoldGained > 0)
-                        DisplayText($"Gold gained: +{e.GoldGained}", Color.Yellow);
-                    if (e.LootGained.Count > 0)
-                        DisplayText($"Loot found: {string.Join(", ", e.LootGained.Select(i => i.Name))}", Color.Magenta);
-                }
-                else if (e.Result == CombatResult.Defeat)
-                {
-                    DisplayText($"You were defeated by {e.Enemy.Name}!", Color.Red);
-                    DisplayText("You have been defeated in combat.", Color.Orange);
-                }
-                else if (e.Result == CombatResult.Fled)
-                {
-                    DisplayText($"You successfully fled from {e.Enemy.Name}!", Color.Yellow);
-                }
-                
-                DisplayText("", Color.White);
-                
-                SetCombatMode(false);
-                UpdateStatus("Combat ended");
-            });
+                this.Invoke(new Action(() => OnCombatEnded(e)));
+                return;
+            }
+
+            // UIManager will handle the combat ended message through its own event handler
+            SetCombatMode(false);
+            
+            // Update character stats after combat
+            if (e.Player != null)
+            {
+                characterStatsControl?.UpdateStats(e.Player);
+                progressDisplayControl?.UpdateHealth(e.Player.Health, e.Player.MaxHealth);
+                progressDisplayControl?.UpdateExperience(e.Player.Experience, e.Player.ExperienceToNextLevel);
+            }
+
+            gameStatusBarControl?.UpdateStatus("Combat ended");
         }
 
         private void OnInventoryUpdated(InventoryUpdatedEvent e)
         {
-            // Update inventory-related displays
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                // Show inventory change message
-                if (e.Action == InventoryAction.ItemAdded)
-                {
-                    DisplayText($"Added to inventory: {e.AffectedItem.Name} x{e.Quantity}", Color.Green);
-                }
-                else if (e.Action == InventoryAction.ItemRemoved)
-                {
-                    DisplayText($"Removed from inventory: {e.AffectedItem.Name} x{e.Quantity}", Color.Orange);
-                }
-            });
+                this.Invoke(new Action(() => OnInventoryUpdated(e)));
+                return;
+            }
+
+            switch (e.Action)
+            {
+                case InventoryAction.ItemAdded:
+                    _uiManager.DisplayText($"Added to inventory: {e.AffectedItem.Name} x{e.Quantity}", Color.Green);
+                    break;
+                case InventoryAction.ItemRemoved:
+                    _uiManager.DisplayText($"Removed from inventory: {e.AffectedItem.Name} x{e.Quantity}", Color.Orange);
+                    break;
+            }
         }
 
         private void OnItemEquipped(ItemEquippedEvent e)
         {
-            // Show equipment change
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                DisplayText($"Equipped: {e.EquippedItem.Name}", Color.Green);
-                
-                // Update character stats
-                characterStatsControl?.UpdateStats(e.Player);
-            });
+                this.Invoke(new Action(() => OnItemEquipped(e)));
+                return;
+            }
+
+            _uiManager.DisplayText($"Equipped: {e.EquippedItem.Name}", Color.Green);
+            characterStatsControl?.UpdateStats(e.Player);
         }
 
         private void OnItemUnequipped(ItemUnequippedEvent e)
         {
-            // Show equipment removal
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                DisplayText($"Unequipped: {e.UnequippedItem.Name}", Color.Orange);
-                
-                // Update character stats
-                characterStatsControl?.UpdateStats(e.Player);
-            });
+                this.Invoke(new Action(() => OnItemUnequipped(e)));
+                return;
+            }
+
+            _uiManager.DisplayText($"Unequipped: {e.UnequippedItem.Name}", Color.Orange);
+            characterStatsControl?.UpdateStats(e.Player);
         }
 
         private void OnSkillLearned(SkillLearnedEvent e)
         {
-            // Show skill learning result
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                if (e.WasSuccessful)
-                {
-                    DisplayText($"Skill learned: {e.Skill.Name}!", Color.Magenta);
-                    DisplayText($"Skill points spent: {e.SkillPointsSpent}", Color.Cyan);
-                    DisplayText($"Remaining skill points: {e.RemainingSkillPoints}", Color.Cyan);
-                }
-                else
-                {
-                    DisplayText($"Failed to learn skill: {e.FailureReason}", Color.Red);
-                }
-            });
+                this.Invoke(new Action(() => OnSkillLearned(e)));
+                return;
+            }
+
+            if (e.WasSuccessful)
+            {
+                _uiManager.DisplayText($"Skill learned: {e.Skill.Name}!", Color.Magenta);
+                _uiManager.DisplayText($"Skill points spent: {e.SkillPointsSpent}", Color.Cyan);
+                _uiManager.DisplayText($"Remaining skill points: {e.RemainingSkillPoints}", Color.Cyan);
+                characterStatsControl?.UpdateStats(e.Player);
+            }
+            else
+            {
+                _uiManager.DisplayText($"Failed to learn skill: {e.FailureReason}", Color.Red);
+            }
         }
 
         private void OnSkillUsed(SkillUsedEvent e)
         {
-            // Show skill usage result
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                if (e.WasSuccessful)
+                this.Invoke(new Action(() => OnSkillUsed(e)));
+                return;
+            }
+
+            if (e.WasSuccessful)
+            {
+                _uiManager.DisplayText($"Used skill: {e.Skill.Name}", Color.Magenta);
+                if (e.SkillEffects.ContainsKey("description"))
                 {
-                    DisplayText($"Used skill: {e.Skill.Name}", Color.Magenta);
-                    if (e.SkillEffects.ContainsKey("description"))
-                    {
-                        DisplayText($"Effect: {e.SkillEffects["description"]}", Color.Cyan);
-                    }
+                    _uiManager.DisplayText($"Effect: {e.SkillEffects["description"]}", Color.Cyan);
                 }
-                else
-                {
-                    DisplayText($"Failed to use skill: {e.FailureReason}", Color.Red);
-                }
-            });
+            }
+            else
+            {
+                _uiManager.DisplayText($"Failed to use skill: {e.FailureReason}", Color.Red);
+            }
         }
 
         private void OnCommandProcessed(CommandProcessedEvent e)
         {
-            // Show command processing result
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                if (!e.Result.Success && !string.IsNullOrEmpty(e.Result.ErrorMessage))
-                {
-                    DisplayText($"Error: {e.Result.ErrorMessage}", Color.Red);
-                }
-                
-                // Update status if needed
-                if (!string.IsNullOrEmpty(e.Result.Message))
-                {
-                    UpdateStatus(e.Result.Message);
-                }
-            });
+                this.Invoke(new Action(() => OnCommandProcessed(e)));
+                return;
+            }
+
+            if (!e.Result.Success)
+            {
+                _uiManager.DisplayText($"Error: {e.Result.ErrorMessage}", Color.Red);
+            }
         }
 
         private void OnGameMessage(GameMessageEvent e)
         {
-            // Display game messages
-            this.Invoke(() =>
+            if (this.InvokeRequired)
             {
-                Color messageColor = e.MessageType switch
-                {
-                    GameMessageType.Info => Color.White,
-                    GameMessageType.Success => Color.Green,
-                    GameMessageType.Warning => Color.Yellow,
-                    GameMessageType.Error => Color.Red,
-                    GameMessageType.Combat => Color.Orange,
-                    GameMessageType.System => Color.Cyan,
-                    _ => Color.White
-                };
-                
-                DisplayText(e.Message, messageColor);
-            });
+                this.Invoke(new Action(() => OnGameMessage(e)));
+                return;
+            }
+
+            var messageColor = e.MessageType switch
+            {
+                GameMessageType.Info => Color.White,
+                GameMessageType.Success => Color.Green,
+                GameMessageType.Warning => Color.Yellow,
+                GameMessageType.Error => Color.Red,
+                GameMessageType.Combat => Color.Orange,
+                GameMessageType.System => Color.Cyan,
+                _ => Color.White
+            };
+
+            _uiManager.DisplayText(e.Message, messageColor);
         }
 
         // UI Action Methods
@@ -1226,69 +1213,38 @@ namespace WinFormsApp1
 
         private void ShowCharacterStats()
         {
-            var player = _playerManager.CurrentPlayer;
-            if (player != null)
+            if (_gameManager.CurrentGameState != GameState.Running)
             {
-                var statsMessage = $"=== Character Stats ===\n" +
-                                 $"Name: {player.Name}\n" +
-                                 $"Class: {player.CharacterClass}\n" +
-                                 $"Level: {player.Level}\n" +
-                                 $"Health: {player.Health}/{player.MaxHealth}\n" +
-                                 $"Attack: {player.Attack}\n" +
-                                 $"Defense: {player.Defense}\n" +
-                                 $"Experience: {player.Experience}/{player.ExperienceToNextLevel}\n" +
-                                 $"Gold: {player.Gold}\n" +
-                                 $"Skill Points: {player.SkillPoints}";
-                
-                DisplayText(statsMessage, Color.Cyan);
+                _uiManager.DisplayText("Start a new game first!", Color.Red, true);
+                return;
             }
-            else
-            {
-                DisplayText("No character loaded.", Color.Red);
-            }
+
+            _uiManager.ShowCharacterStats();
         }
 
         private void ShowSkillTree(object sender, EventArgs e)
         {
-            if (_gameManager != null)
+            if (_gameManager.CurrentGameState != GameState.Running)
             {
-                try
-                {
-                    var skillTreeForm = _serviceProvider.GetRequiredService<SkillTreeForm>();
-                    skillTreeForm.ShowDialog();
-                }
-                catch
-                {
-                    DisplayText("Start a new game first!", Color.Red);
-                }
+                _uiManager.DisplayText("Start a new game first!", Color.Red, true);
+                return;
+            }
+
+            try
+            {
+                var skillTreeForm = _serviceProvider.GetRequiredService<SkillTreeForm>();
+                skillTreeForm.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening skill tree form");
+                _uiManager.ShowNotification("Error", "Failed to open skill tree", NotificationType.Error);
             }
         }
 
         private void ShowHelp()
         {
-            var helpText = "=== Game Commands ===\n" +
-                          "Movement: north, south, east, west, go [direction]\n" +
-                          "Actions: look, take [item], use [item], attack [enemy]\n" +
-                          "Character: stats, inventory, skills\n" +
-                          "Combat: attack, defend, flee\n" +
-                          "Game: save, load, help, quit\n" +
-                          "\n" +
-                          "=== Advanced Commands ===\n" +
-                          "auto-explore: Automatically explore random directions\n" +
-                          "optimize-character: Auto-equip best items\n" +
-                          "batch-use <type>: Use all items of specified type\n" +
-                          "skill-combo <skills>: Execute multiple skills in sequence\n" +
-                          "statistics: Show detailed game statistics\n" +
-                          "features: Show/toggle game features\n" +
-                          "status: Show comprehensive game status\n" +
-                          "\n" +
-                          "=== Keyboard Shortcuts ===\n" +
-                          "Ctrl+S: Save Game\n" +
-                          "Ctrl+L: Load Game\n" +
-                          "F1: Show Help\n" +
-                          "Tab: Open Inventory";
-            
-            DisplayText(helpText, Color.Yellow);
+            _uiManager.ShowHelp("general");
         }
 
         // Advanced GameCoordinatorService demonstration methods
@@ -1297,43 +1253,45 @@ namespace WinFormsApp1
         {
             try
             {
-                DisplayText("=== Validating Game State ===", Color.Cyan);
+                _uiManager.DisplayText("=== Validating Game State ===", Color.Cyan, true);
                 var validation = await _gameCoordinator.ValidateGameStateAsync();
 
-                DisplayText($"Validation Result: {(validation.IsValid ? "VALID" : "INVALID")}", 
-                    validation.IsValid ? Color.Green : Color.Red);
+                var validationColor = validation.IsValid ? Color.Green : Color.Red;
+                _uiManager.DisplayText($"Validation Result: {(validation.IsValid ? "VALID" : "INVALID")}", validationColor, true);
 
-                if (validation.Issues.Any())
+                if (validation.Issues.Count > 0)
                 {
-                    DisplayText($"\nFound {validation.Issues.Count} issues:", Color.Yellow);
+                    _uiManager.DisplayText($"\nFound {validation.Issues.Count} issues:", Color.Yellow);
+                    
                     foreach (var issue in validation.Issues)
                     {
                         var color = issue.Severity switch
                         {
-                            "Error" => Color.Red,
-                            "Warning" => Color.Yellow,
+                            "Critical" => Color.Red,
+                            "Warning" => Color.Orange,
+                            "Info" => Color.Cyan,
                             _ => Color.White
                         };
-                        DisplayText($"[{issue.Severity}] {issue.Manager}: {issue.Issue}", color);
-                        DisplayText($"  Recommendation: {issue.Recommendation}", Color.Cyan);
+                        _uiManager.DisplayText($"[{issue.Severity}] {issue.Manager}: {issue.Issue}", color);
+                        _uiManager.DisplayText($"  Recommendation: {issue.Recommendation}", Color.Cyan);
                     }
                 }
                 else
                 {
-                    DisplayText("No issues found - game state is healthy!", Color.Green);
+                    _uiManager.DisplayText("No issues found - game state is healthy!", Color.Green);
                 }
 
-                DisplayText($"\nManager States:", Color.Cyan);
+                _uiManager.DisplayText($"\nManager States:", Color.Cyan);
                 foreach (var state in validation.ManagerStates)
                 {
-                    DisplayText($"  {state.Key}: {(state.Value ? "OK" : "ERROR")}", 
-                        state.Value ? Color.Green : Color.Red);
+                    var stateColor = state.Value ? Color.Green : Color.Red;
+                    _uiManager.DisplayText($"  {state.Key}: {(state.Value ? "OK" : "ERROR")}", stateColor);
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error during validation: {ex.Message}", Color.Red);
-                _logger.LogError(ex, "Error validating game state");
+                _uiManager.DisplayText($"Error during validation: {ex.Message}", Color.Red, true);
+                _logger.LogError(ex, "Error during game state validation");
             }
         }
 
@@ -1341,47 +1299,47 @@ namespace WinFormsApp1
         {
             try
             {
-                DisplayText("=== Comprehensive Game Status ===", Color.Cyan);
+                _uiManager.DisplayText("=== Comprehensive Game Status ===", Color.Cyan, true);
                 var status = await _gameCoordinator.GetComprehensiveStatusAsync();
 
-                DisplayText($"Game State: {status.GameState}", Color.White);
-                DisplayText($"In Combat: {status.InCombat}", Color.White);
-                DisplayText($"Current Location: {status.CurrentLocation ?? "None"}", Color.White);
-                
+                _uiManager.DisplayText($"Game State: {status.GameState}", Color.White);
+                _uiManager.DisplayText($"In Combat: {status.InCombat}", Color.White);
+                _uiManager.DisplayText($"Current Location: {status.CurrentLocation ?? "None"}", Color.White);
+
                 if (status.CurrentPlayer != null)
                 {
-                    DisplayText($"Player: {status.CurrentPlayer.Name} (Level {status.CurrentPlayer.Level})", Color.Green);
-                    DisplayText($"Health: {status.CurrentPlayer.Health}/{status.CurrentPlayer.MaxHealth}", Color.White);
-                    DisplayText($"Gold: {status.CurrentPlayer.Gold}", Color.Yellow);
+                    _uiManager.DisplayText($"Player: {status.CurrentPlayer.Name} (Level {status.CurrentPlayer.Level})", Color.Green);
+                    _uiManager.DisplayText($"Health: {status.CurrentPlayer.Health}/{status.CurrentPlayer.MaxHealth}", Color.White);
+                    _uiManager.DisplayText($"Gold: {status.CurrentPlayer.Gold}", Color.Yellow);
                 }
 
                 if (status.Statistics != null)
                 {
-                    DisplayText($"\nSession Statistics:", Color.Cyan);
-                    DisplayText($"  Play Time: {status.Statistics.TotalPlayTime:F1} minutes", Color.White);
-                    DisplayText($"  Enemies Defeated: {status.Statistics.EnemiesDefeated}", Color.White);
-                    DisplayText($"  Items Collected: {status.Statistics.ItemsCollected}", Color.White);
-                    DisplayText($"  Locations Visited: {status.Statistics.LocationsVisited}", Color.White);
+                    _uiManager.DisplayText($"\nSession Statistics:", Color.Cyan);
+                    _uiManager.DisplayText($"  Play Time: {status.Statistics.TotalPlayTime:F1} minutes", Color.White);
+                    _uiManager.DisplayText($"  Enemies Defeated: {status.Statistics.EnemiesDefeated}", Color.White);
+                    _uiManager.DisplayText($"  Items Collected: {status.Statistics.ItemsCollected}", Color.White);
+                    _uiManager.DisplayText($"  Locations Visited: {status.Statistics.LocationsVisited}", Color.White);
                 }
 
-                if (status.ActiveEffects.Any())
+                if (status.ActiveEffects?.Count > 0)
                 {
-                    DisplayText($"\nActive Effects:", Color.Magenta);
+                    _uiManager.DisplayText($"\nActive Effects:", Color.Magenta);
                     foreach (var effect in status.ActiveEffects)
                     {
-                        DisplayText($"  • {effect}", Color.White);
+                        _uiManager.DisplayText($"  • {effect}", Color.White);
                     }
                 }
 
-                DisplayText($"\nManager Statuses:", Color.Cyan);
+                _uiManager.DisplayText($"\nManager Statuses:", Color.Cyan);
                 foreach (var managerStatus in status.ManagerStatuses)
                 {
-                    DisplayText($"  {managerStatus.Key}: {managerStatus.Value}", Color.White);
+                    _uiManager.DisplayText($"  {managerStatus.Key}: {managerStatus.Value}", Color.White);
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error getting comprehensive status: {ex.Message}", Color.Red);
+                _uiManager.DisplayText($"Error getting comprehensive status: {ex.Message}", Color.Red, true);
                 _logger.LogError(ex, "Error getting comprehensive status");
             }
         }
@@ -1390,23 +1348,23 @@ namespace WinFormsApp1
         {
             try
             {
-                DisplayText("=== Synchronizing Managers ===", Color.Cyan);
+                _uiManager.DisplayText("=== Synchronizing Managers ===", Color.Cyan, true);
                 var success = await _gameCoordinator.SynchronizeManagersAsync();
 
                 if (success)
                 {
-                    DisplayText("Manager synchronization completed successfully!", Color.Green);
-                    DisplayText("All manager data is now synchronized.", Color.White);
+                    _uiManager.DisplayText("Manager synchronization completed successfully!", Color.Green, true);
+                    _uiManager.DisplayText("All manager data is now synchronized.", Color.White);
                 }
                 else
                 {
-                    DisplayText("Manager synchronization failed.", Color.Red);
-                    DisplayText("Check logs for detailed error information.", Color.Yellow);
+                    _uiManager.DisplayText("Manager synchronization failed.", Color.Red, true);
+                    _uiManager.DisplayText("Check logs for detailed error information.", Color.Yellow);
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error during synchronization: {ex.Message}", Color.Red);
+                _uiManager.DisplayText($"Error during synchronization: {ex.Message}", Color.Red, true);
                 _logger.LogError(ex, "Error synchronizing managers");
             }
         }
@@ -1415,39 +1373,44 @@ namespace WinFormsApp1
         {
             try
             {
-                DisplayText("=== Performing Automated Maintenance ===", Color.Cyan);
+                _uiManager.DisplayText("=== Performing Automated Maintenance ===", Color.Cyan, true);
                 var result = await _gameCoordinator.PerformMaintenanceAsync();
 
                 if (result.Success)
                 {
-                    DisplayText($"Maintenance completed successfully in {result.Duration.TotalMilliseconds:F0}ms", Color.Green);
-                    DisplayText($"\nOperations performed:", Color.Cyan);
-                    foreach (var operation in result.OperationsPerformed)
+                    _uiManager.DisplayText("Maintenance completed successfully!", Color.Green, true);
+                    _uiManager.DisplayText($"Duration: {result.Duration.TotalMilliseconds:F0}ms", Color.Cyan);
+                    
+                    if (result.OperationsPerformed?.Count > 0)
                     {
-                        DisplayText($"  ✓ {operation}", Color.Green);
+                        _uiManager.DisplayText("\nOperations performed:", Color.Cyan);
+                        foreach (var operation in result.OperationsPerformed)
+                        {
+                            _uiManager.DisplayText($"  ✓ {operation}", Color.Green);
+                        }
                     }
 
-                    if (result.Results.Any())
+                    if (result.Results?.Count > 0)
                     {
-                        DisplayText($"\nResults:", Color.Cyan);
-                        foreach (var resultItem in result.Results)
+                        _uiManager.DisplayText("\nMaintenance Results:", Color.Cyan);
+                        foreach (var detail in result.Results)
                         {
-                            DisplayText($"  {resultItem.Key}: {resultItem.Value}", Color.White);
+                            _uiManager.DisplayText($"  • {detail.Key}: {detail.Value}", Color.White);
                         }
                     }
                 }
                 else
                 {
-                    DisplayText("Maintenance failed!", Color.Red);
-                    if (result.Results.ContainsKey("Error"))
+                    _uiManager.DisplayText("Maintenance failed!", Color.Red, true);
+                    if (result.Results?.ContainsKey("Error") == true)
                     {
-                        DisplayText($"Error: {result.Results["Error"]}", Color.Red);
+                        _uiManager.DisplayText($"Error: {result.Results["Error"]}", Color.Red);
                     }
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error during maintenance: {ex.Message}", Color.Red);
+                _uiManager.DisplayText($"Error during maintenance: {ex.Message}", Color.Red, true);
                 _logger.LogError(ex, "Error performing maintenance");
             }
         }
@@ -1458,34 +1421,34 @@ namespace WinFormsApp1
             {
                 if (_playerManager.CurrentPlayer == null)
                 {
-                    DisplayText("No player loaded. Start a new game first!", Color.Red);
+                    _uiManager.DisplayText("No player loaded. Start a new game first!", Color.Red, true);
                     return;
                 }
 
-                DisplayText("=== Level Up with Rewards ===", Color.Cyan);
+                _uiManager.DisplayText("=== Level Up with Rewards ===", Color.Cyan, true);
                 var parameters = new Dictionary<string, object>();
                 var result = await _gameCoordinator.PerformCoordinatedActionAsync("levelup_with_rewards", parameters);
 
                 if (result.Success)
                 {
-                    DisplayText(result.Message, Color.Green);
+                    _uiManager.DisplayText(result.Message, Color.Green, true);
                     
                     if (result.Results.ContainsKey("OldLevel") && result.Results.ContainsKey("NewLevel"))
                     {
-                        DisplayText($"Level progression: {result.Results["OldLevel"]} → {result.Results["NewLevel"]}", Color.Magenta);
+                        _uiManager.DisplayText($"Level progression: {result.Results["OldLevel"]} → {result.Results["NewLevel"]}", Color.Magenta, true);
                     }
                     
                     if (result.Results.ContainsKey("GoldReward"))
                     {
-                        DisplayText($"Gold reward: {result.Results["GoldReward"]}", Color.Yellow);
+                        _uiManager.DisplayText($"Gold reward: {result.Results["GoldReward"]}", Color.Yellow, true);
                     }
                 }
                 else
                 {
-                    DisplayText("Level up failed:", Color.Red);
+                    _uiManager.DisplayText("Level up failed:", Color.Red, true);
                     foreach (var error in result.Errors)
                     {
-                        DisplayText($"  • {error}", Color.Red);
+                        _uiManager.DisplayText($"  • {error}", Color.Red, true);
                     }
                 }
 
@@ -1493,13 +1456,13 @@ namespace WinFormsApp1
                 {
                     foreach (var warning in result.Warnings)
                     {
-                        DisplayText($"Warning: {warning}", Color.Yellow);
+                        _uiManager.DisplayText($"Warning: {warning}", Color.Yellow, true);
                     }
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error during level up: {ex.Message}", Color.Red);
+                _uiManager.DisplayText($"Error during level up: {ex.Message}", Color.Red, true);
                 _logger.LogError(ex, "Error performing level up with rewards");
             }
         }
@@ -1510,25 +1473,25 @@ namespace WinFormsApp1
             {
                 if (_playerManager.CurrentPlayer == null)
                 {
-                    DisplayText("No player loaded. Start a new game first!", Color.Red);
+                    _uiManager.DisplayText("No player loaded. Start a new game first!", Color.Red, true);
                     return;
                 }
 
-                DisplayText("=== Auto Explore ===", Color.Cyan);
+                _uiManager.DisplayText("=== Auto Explore ===", Color.Cyan, true);
                 var result = await _gameCoordinator.ExecuteComplexCommandAsync("auto-explore");
 
                 if (result.Success)
                 {
-                    DisplayText(result.Message, Color.Green);
+                    _uiManager.DisplayText(result.Message, Color.Green, true);
                 }
                 else
                 {
-                    DisplayText($"Auto explore failed: {result.ErrorMessage}", Color.Red);
+                    _uiManager.DisplayText($"Auto explore failed: {result.ErrorMessage}", Color.Red, true);
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error during auto explore: {ex.Message}", Color.Red);
+                _uiManager.DisplayText($"Error during auto explore: {ex.Message}", Color.Red, true);
                 _logger.LogError(ex, "Error performing auto explore");
             }
         }
@@ -1539,27 +1502,191 @@ namespace WinFormsApp1
             {
                 if (_playerManager.CurrentPlayer == null)
                 {
-                    DisplayText("No player loaded. Start a new game first!", Color.Red);
+                    _uiManager.DisplayText("No player loaded. Start a new game first!", Color.Red, true);
                     return;
                 }
 
-                DisplayText("=== Optimize Character ===", Color.Cyan);
+                _uiManager.DisplayText("=== Optimize Character ===", Color.Cyan, true);
                 var result = await _gameCoordinator.ExecuteComplexCommandAsync("optimize-character");
 
                 if (result.Success)
                 {
-                    DisplayText(result.Message, Color.Green);
+                    _uiManager.DisplayText(result.Message, Color.Green, true);
                 }
                 else
                 {
-                    DisplayText($"Character optimization failed: {result.ErrorMessage}", Color.Red);
+                    _uiManager.DisplayText($"Character optimization failed: {result.ErrorMessage}", Color.Red, true);
                 }
             }
             catch (Exception ex)
             {
-                DisplayText($"Error during character optimization: {ex.Message}", Color.Red);
+                _uiManager.DisplayText($"Error during character optimization: {ex.Message}", Color.Red, true);
                 _logger.LogError(ex, "Error optimizing character");
             }
+        }
+
+        // UI Event Handlers
+        private void OnDisplayText(DisplayTextEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnDisplayText(e)));
+                return;
+            }
+
+            if (e.Category == "Clear")
+            {
+                gameTextDisplayControl?.ClearText();
+            }
+            else
+            {
+                gameTextDisplayControl?.DisplayText(e.Text, e.Color);
+            }
+        }
+
+        private void OnDisplayFormattedMessage(DisplayFormattedMessageEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnDisplayFormattedMessage(e)));
+                return;
+            }
+
+            if (e.ClearPrevious)
+            {
+                gameTextDisplayControl?.ClearText();
+            }
+
+            if (!string.IsNullOrEmpty(e.Title))
+            {
+                gameTextDisplayControl?.DisplayText($"=== {e.Title} ===", Color.Cyan);
+            }
+
+            foreach (var line in e.Lines)
+            {
+                var color = line.Color ?? Color.White;
+                gameTextDisplayControl?.DisplayText(line.Text, color);
+            }
+        }
+
+        private void OnNotification(NotificationEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnNotification(e)));
+                return;
+            }
+
+            var color = e.Type switch
+            {
+                NotificationType.Success => Color.Green,
+                NotificationType.Warning => Color.Orange,
+                NotificationType.Error => Color.Red,
+                NotificationType.Critical => Color.DarkRed,
+                _ => Color.White
+            };
+
+            // Show in status bar
+            gameStatusBarControl?.UpdateStatus($"{e.Title}: {e.Message}");
+
+            // Also show in main text area for important notifications
+            if (e.Type >= NotificationType.Warning || e.RequiresUserAction)
+            {
+                gameTextDisplayControl?.DisplayText($"[{e.Type.ToString().ToUpper()}] {e.Title}: {e.Message}", color);
+            }
+
+            // For critical errors, show message box
+            if (e.Type == NotificationType.Critical && e.RequiresUserAction)
+            {
+                MessageBox.Show(e.Message, e.Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnUIControlStateChanged(UIControlStateChangedEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnUIControlStateChanged(e)));
+                return;
+            }
+
+            // Handle control state changes
+            switch (e.ControlName)
+            {
+                case "GameControls":
+                    SetGameControlsEnabled(e.IsEnabled);
+                    break;
+                // Add more control state handling as needed
+            }
+        }
+
+        private void OnMenuStateChanged(MenuStateChangedEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnMenuStateChanged(e)));
+                return;
+            }
+
+            // Handle menu state changes
+            if (menuStrip != null)
+            {
+                foreach (ToolStripMenuItem mainMenu in menuStrip.Items)
+                {
+                    if (e.MenuItemStates.ContainsKey(mainMenu.Text))
+                    {
+                        mainMenu.Enabled = e.MenuItemStates[mainMenu.Text];
+                    }
+
+                    // Handle submenu items
+                    foreach (ToolStripItem subItem in mainMenu.DropDownItems)
+                    {
+                        if (e.MenuItemStates.ContainsKey(subItem.Text))
+                        {
+                            subItem.Enabled = e.MenuItemStates[subItem.Text];
+                        }
+                    }
+                }
+            }
+        }
+
+        private void OnProgressUpdate(ProgressUpdateEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnProgressUpdate(e)));
+                return;
+            }
+
+            // Update progress displays based on progress bar name
+            switch (e.ProgressBarName.ToLower())
+            {
+                case "health":
+                    progressDisplayControl?.UpdateHealth(e.CurrentValue, e.MaxValue);
+                    break;
+                case "experience":
+                    progressDisplayControl?.UpdateExperience(e.CurrentValue, e.MaxValue);
+                    break;
+                default:
+                    // For other progress bars, we don't have a generic update method
+                    // so we'll just update the health or experience based on the label
+                    if (e.Label?.ToLower().Contains("health") == true)
+                        progressDisplayControl?.UpdateHealth(e.CurrentValue, e.MaxValue);
+                    else if (e.Label?.ToLower().Contains("experience") == true)
+                        progressDisplayControl?.UpdateExperience(e.CurrentValue, e.MaxValue);
+                    break;
+            }
+        }
+
+        private void OnThemeChanged(ThemeChangedEvent e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => OnThemeChanged(e)));
+                return;
+            }
+
+            ApplyTheme(e.ThemeName);
         }
     }
 }

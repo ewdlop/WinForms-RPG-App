@@ -26,6 +26,7 @@ namespace WinFormsApp1.Extensions
             services.AddSingleton<IInventoryManager, InventoryManager>();
             services.AddSingleton<ILocationManager, LocationManager>();
             services.AddSingleton<ISkillManager, SkillManager>();
+            services.AddSingleton<IUIManager, UIManager>();
 
             // Register advanced coordination service
             services.AddSingleton<IGameCoordinatorService, GameCoordinatorService>();

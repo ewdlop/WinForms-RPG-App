@@ -80,6 +80,7 @@ namespace WinFormsApp1
                 var inventoryManager = serviceProvider.GetRequiredService<IInventoryManager>();
                 var locationManager = serviceProvider.GetRequiredService<ILocationManager>();
                 var skillManager = serviceProvider.GetRequiredService<ISkillManager>();
+                var uiManager = serviceProvider.GetRequiredService<IUIManager>();
 
                 // Initialize all managers
                 if (playerManager is IBaseManager playerBaseManager)
@@ -100,11 +101,14 @@ namespace WinFormsApp1
                 if (skillManager is IBaseManager skillBaseManager)
                     skillBaseManager.Initialize();
 
-                logger.LogInformation("All game managers initialized successfully");
+                if (uiManager is IBaseManager uiBaseManager)
+                    uiBaseManager.Initialize();
+
+                logger.LogInformation("All managers initialized successfully");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error initializing game managers");
+                logger.LogCritical(ex, "Failed to initialize managers");
                 throw;
             }
         }
