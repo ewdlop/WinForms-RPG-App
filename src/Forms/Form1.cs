@@ -1,12 +1,6 @@
-using System;
-using System.Drawing;
-using System.Windows.Forms;
-using System.Linq;
-using System.Collections.Generic;
 using WinFormsApp1.Controls;
 using WinFormsApp1.Interfaces;
 using WinFormsApp1.Events;
-using WinFormsApp1.Managers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -40,6 +34,7 @@ namespace WinFormsApp1
         private readonly IInventoryManager _inventoryManager;
         private readonly ILocationManager _locationManager;
         private readonly ISkillManager _skillManager;
+        private readonly IGameCoordinatorService _gameCoordinator;
         private readonly ILogger<Form1> _logger;
 
         public Form1(IServiceProvider serviceProvider)
@@ -54,16 +49,17 @@ namespace WinFormsApp1
             _inventoryManager = serviceProvider.GetRequiredService<IInventoryManager>();
             _locationManager = serviceProvider.GetRequiredService<ILocationManager>();
             _skillManager = serviceProvider.GetRequiredService<ISkillManager>();
+            _gameCoordinator = serviceProvider.GetRequiredService<IGameCoordinatorService>();
             _logger = serviceProvider.GetRequiredService<ILogger<Form1>>();
 
-            _logger.LogInformation("Initializing Form1 with dependency injection");
+            _logger.LogInformation("Initializing Form1 with dependency injection and advanced services");
 
             InitializeComponent();
             InitializeGameUI(); // Initialize the UI before subscribing to events
             SubscribeToEvents();
             SetGameControlsEnabled(false); // Disable until game starts
 
-            _logger.LogInformation("Form1 initialized successfully");
+            _logger.LogInformation("Form1 initialized successfully with GameCoordinatorService");
         }
 
         private void SubscribeToEvents()
@@ -236,34 +232,47 @@ namespace WinFormsApp1
             characterMenu.DropDownItems.Add("&Stats", null, (s, e) => ShowCharacterStats());
             characterMenu.DropDownItems.Add("S&kills", null, (s, e) => ShowSkillTree(s, e));
             characterMenu.DropDownItems.Add("&Equipment", null, ShowEquipment);
+            menuStrip.Items.Add(characterMenu);
 
             // World menu
             ToolStripMenuItem worldMenu = new ToolStripMenuItem("&World");
             worldMenu.DropDownItems.Add("&Map", null, ShowMap);
             worldMenu.DropDownItems.Add("&Locations", null, ShowLocationList);
+            menuStrip.Items.Add(worldMenu);
 
             // Settings menu
             ToolStripMenuItem settingsMenu = new ToolStripMenuItem("&Settings");
             settingsMenu.DropDownItems.Add("&Themes", null, ShowThemeSelection);
             settingsMenu.DropDownItems.Add("&Font Size", null, ShowFontSettings);
             settingsMenu.DropDownItems.Add("&Game Settings", null, ShowGameSettings);
+            menuStrip.Items.Add(settingsMenu);
 
-            // Tools menu (new)
+            // Tools menu
             ToolStripMenuItem toolsMenu = new ToolStripMenuItem("&Tools");
-            toolsMenu.DropDownItems.Add("&Asset Editor", null, ShowAssetEditor);
-            toolsMenu.DropDownItems.Add(new ToolStripSeparator());
-            toolsMenu.DropDownItems.Add("&Data Validation", null, ShowDataValidation);
+            toolsMenu.DropDownItems.Add(new ToolStripMenuItem("&Asset Editor", null, ShowAssetEditor));
+            toolsMenu.DropDownItems.Add(new ToolStripMenuItem("&Data Validation", null, ShowDataValidation));
+            menuStrip.Items.Add(toolsMenu);
+
+            // Advanced menu - demonstrates GameCoordinatorService
+            ToolStripMenuItem advancedMenu = new ToolStripMenuItem("&Advanced");
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Validate Game State", null, ValidateGameState));
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Comprehensive Status", null, ShowComprehensiveStatus));
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Synchronize Managers", null, SynchronizeManagers));
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Perform Maintenance", null, PerformMaintenance));
+            advancedMenu.DropDownItems.Add(new ToolStripSeparator());
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Level Up with Rewards", null, LevelUpWithRewards));
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Auto Explore", null, AutoExplore));
+            advancedMenu.DropDownItems.Add(new ToolStripMenuItem("&Optimize Character", null, OptimizeCharacter));
+            menuStrip.Items.Add(advancedMenu);
 
             // Help menu
             ToolStripMenuItem helpMenu = new ToolStripMenuItem("&Help");
             helpMenu.DropDownItems.Add("&Commands", null, (s, e) => ShowHelp());
-            helpMenu.DropDownItems.Add("&Controls", null, ShowControlsHelp);
-            helpMenu.DropDownItems.Add(new ToolStripSeparator());
-            helpMenu.DropDownItems.Add("&About", null, ShowAbout);
+            helpMenu.DropDownItems.Add(new ToolStripMenuItem("&Controls", null, ShowControlsHelp));
+            helpMenu.DropDownItems.Add(new ToolStripMenuItem("&About", null, ShowAbout));
+            menuStrip.Items.Add(helpMenu);
 
-            menuStrip.Items.AddRange(new ToolStripItem[] {
-                gameMenu, characterMenu, worldMenu, settingsMenu, toolsMenu, helpMenu
-            });
+            this.MainMenuStrip = menuStrip;
         }
 
         private void CreateToolStrip()
@@ -1264,6 +1273,15 @@ namespace WinFormsApp1
                           "Combat: attack, defend, flee\n" +
                           "Game: save, load, help, quit\n" +
                           "\n" +
+                          "=== Advanced Commands ===\n" +
+                          "auto-explore: Automatically explore random directions\n" +
+                          "optimize-character: Auto-equip best items\n" +
+                          "batch-use <type>: Use all items of specified type\n" +
+                          "skill-combo <skills>: Execute multiple skills in sequence\n" +
+                          "statistics: Show detailed game statistics\n" +
+                          "features: Show/toggle game features\n" +
+                          "status: Show comprehensive game status\n" +
+                          "\n" +
                           "=== Keyboard Shortcuts ===\n" +
                           "Ctrl+S: Save Game\n" +
                           "Ctrl+L: Load Game\n" +
@@ -1271,6 +1289,277 @@ namespace WinFormsApp1
                           "Tab: Open Inventory";
             
             DisplayText(helpText, Color.Yellow);
+        }
+
+        // Advanced GameCoordinatorService demonstration methods
+
+        private async void ValidateGameState(object sender, EventArgs e)
+        {
+            try
+            {
+                DisplayText("=== Validating Game State ===", Color.Cyan);
+                var validation = await _gameCoordinator.ValidateGameStateAsync();
+
+                DisplayText($"Validation Result: {(validation.IsValid ? "VALID" : "INVALID")}", 
+                    validation.IsValid ? Color.Green : Color.Red);
+
+                if (validation.Issues.Any())
+                {
+                    DisplayText($"\nFound {validation.Issues.Count} issues:", Color.Yellow);
+                    foreach (var issue in validation.Issues)
+                    {
+                        var color = issue.Severity switch
+                        {
+                            "Error" => Color.Red,
+                            "Warning" => Color.Yellow,
+                            _ => Color.White
+                        };
+                        DisplayText($"[{issue.Severity}] {issue.Manager}: {issue.Issue}", color);
+                        DisplayText($"  Recommendation: {issue.Recommendation}", Color.Cyan);
+                    }
+                }
+                else
+                {
+                    DisplayText("No issues found - game state is healthy!", Color.Green);
+                }
+
+                DisplayText($"\nManager States:", Color.Cyan);
+                foreach (var state in validation.ManagerStates)
+                {
+                    DisplayText($"  {state.Key}: {(state.Value ? "OK" : "ERROR")}", 
+                        state.Value ? Color.Green : Color.Red);
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error during validation: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error validating game state");
+            }
+        }
+
+        private async void ShowComprehensiveStatus(object sender, EventArgs e)
+        {
+            try
+            {
+                DisplayText("=== Comprehensive Game Status ===", Color.Cyan);
+                var status = await _gameCoordinator.GetComprehensiveStatusAsync();
+
+                DisplayText($"Game State: {status.GameState}", Color.White);
+                DisplayText($"In Combat: {status.InCombat}", Color.White);
+                DisplayText($"Current Location: {status.CurrentLocation ?? "None"}", Color.White);
+                
+                if (status.CurrentPlayer != null)
+                {
+                    DisplayText($"Player: {status.CurrentPlayer.Name} (Level {status.CurrentPlayer.Level})", Color.Green);
+                    DisplayText($"Health: {status.CurrentPlayer.Health}/{status.CurrentPlayer.MaxHealth}", Color.White);
+                    DisplayText($"Gold: {status.CurrentPlayer.Gold}", Color.Yellow);
+                }
+
+                if (status.Statistics != null)
+                {
+                    DisplayText($"\nSession Statistics:", Color.Cyan);
+                    DisplayText($"  Play Time: {status.Statistics.TotalPlayTime:F1} minutes", Color.White);
+                    DisplayText($"  Enemies Defeated: {status.Statistics.EnemiesDefeated}", Color.White);
+                    DisplayText($"  Items Collected: {status.Statistics.ItemsCollected}", Color.White);
+                    DisplayText($"  Locations Visited: {status.Statistics.LocationsVisited}", Color.White);
+                }
+
+                if (status.ActiveEffects.Any())
+                {
+                    DisplayText($"\nActive Effects:", Color.Magenta);
+                    foreach (var effect in status.ActiveEffects)
+                    {
+                        DisplayText($"  • {effect}", Color.White);
+                    }
+                }
+
+                DisplayText($"\nManager Statuses:", Color.Cyan);
+                foreach (var managerStatus in status.ManagerStatuses)
+                {
+                    DisplayText($"  {managerStatus.Key}: {managerStatus.Value}", Color.White);
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error getting comprehensive status: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error getting comprehensive status");
+            }
+        }
+
+        private async void SynchronizeManagers(object sender, EventArgs e)
+        {
+            try
+            {
+                DisplayText("=== Synchronizing Managers ===", Color.Cyan);
+                var success = await _gameCoordinator.SynchronizeManagersAsync();
+
+                if (success)
+                {
+                    DisplayText("Manager synchronization completed successfully!", Color.Green);
+                    DisplayText("All manager data is now synchronized.", Color.White);
+                }
+                else
+                {
+                    DisplayText("Manager synchronization failed.", Color.Red);
+                    DisplayText("Check logs for detailed error information.", Color.Yellow);
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error during synchronization: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error synchronizing managers");
+            }
+        }
+
+        private async void PerformMaintenance(object sender, EventArgs e)
+        {
+            try
+            {
+                DisplayText("=== Performing Automated Maintenance ===", Color.Cyan);
+                var result = await _gameCoordinator.PerformMaintenanceAsync();
+
+                if (result.Success)
+                {
+                    DisplayText($"Maintenance completed successfully in {result.Duration.TotalMilliseconds:F0}ms", Color.Green);
+                    DisplayText($"\nOperations performed:", Color.Cyan);
+                    foreach (var operation in result.OperationsPerformed)
+                    {
+                        DisplayText($"  ✓ {operation}", Color.Green);
+                    }
+
+                    if (result.Results.Any())
+                    {
+                        DisplayText($"\nResults:", Color.Cyan);
+                        foreach (var resultItem in result.Results)
+                        {
+                            DisplayText($"  {resultItem.Key}: {resultItem.Value}", Color.White);
+                        }
+                    }
+                }
+                else
+                {
+                    DisplayText("Maintenance failed!", Color.Red);
+                    if (result.Results.ContainsKey("Error"))
+                    {
+                        DisplayText($"Error: {result.Results["Error"]}", Color.Red);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error during maintenance: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error performing maintenance");
+            }
+        }
+
+        private async void LevelUpWithRewards(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_playerManager.CurrentPlayer == null)
+                {
+                    DisplayText("No player loaded. Start a new game first!", Color.Red);
+                    return;
+                }
+
+                DisplayText("=== Level Up with Rewards ===", Color.Cyan);
+                var parameters = new Dictionary<string, object>();
+                var result = await _gameCoordinator.PerformCoordinatedActionAsync("levelup_with_rewards", parameters);
+
+                if (result.Success)
+                {
+                    DisplayText(result.Message, Color.Green);
+                    
+                    if (result.Results.ContainsKey("OldLevel") && result.Results.ContainsKey("NewLevel"))
+                    {
+                        DisplayText($"Level progression: {result.Results["OldLevel"]} → {result.Results["NewLevel"]}", Color.Magenta);
+                    }
+                    
+                    if (result.Results.ContainsKey("GoldReward"))
+                    {
+                        DisplayText($"Gold reward: {result.Results["GoldReward"]}", Color.Yellow);
+                    }
+                }
+                else
+                {
+                    DisplayText("Level up failed:", Color.Red);
+                    foreach (var error in result.Errors)
+                    {
+                        DisplayText($"  • {error}", Color.Red);
+                    }
+                }
+
+                if (result.Warnings.Any())
+                {
+                    foreach (var warning in result.Warnings)
+                    {
+                        DisplayText($"Warning: {warning}", Color.Yellow);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error during level up: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error performing level up with rewards");
+            }
+        }
+
+        private async void AutoExplore(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_playerManager.CurrentPlayer == null)
+                {
+                    DisplayText("No player loaded. Start a new game first!", Color.Red);
+                    return;
+                }
+
+                DisplayText("=== Auto Explore ===", Color.Cyan);
+                var result = await _gameCoordinator.ExecuteComplexCommandAsync("auto-explore");
+
+                if (result.Success)
+                {
+                    DisplayText(result.Message, Color.Green);
+                }
+                else
+                {
+                    DisplayText($"Auto explore failed: {result.ErrorMessage}", Color.Red);
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error during auto explore: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error performing auto explore");
+            }
+        }
+
+        private async void OptimizeCharacter(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_playerManager.CurrentPlayer == null)
+                {
+                    DisplayText("No player loaded. Start a new game first!", Color.Red);
+                    return;
+                }
+
+                DisplayText("=== Optimize Character ===", Color.Cyan);
+                var result = await _gameCoordinator.ExecuteComplexCommandAsync("optimize-character");
+
+                if (result.Success)
+                {
+                    DisplayText(result.Message, Color.Green);
+                }
+                else
+                {
+                    DisplayText($"Character optimization failed: {result.ErrorMessage}", Color.Red);
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayText($"Error during character optimization: {ex.Message}", Color.Red);
+                _logger.LogError(ex, "Error optimizing character");
+            }
         }
     }
 }

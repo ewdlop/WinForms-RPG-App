@@ -41,6 +41,28 @@ namespace WinFormsApp1.Managers
         }
 
         /// <summary>
+        /// Shutdown the manager and clean up resources
+        /// </summary>
+        public virtual void Shutdown()
+        {
+            if (!IsInitialized)
+                return;
+
+            try
+            {
+                OnShutdown();
+                UnsubscribeFromEvents();
+                IsInitialized = false;
+                Console.WriteLine($"{ManagerName} shutdown successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error shutting down {ManagerName}: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Clean up resources and unsubscribe from events
         /// </summary>
         public virtual void Cleanup()
@@ -76,6 +98,14 @@ namespace WinFormsApp1.Managers
         /// Additional initialization logic specific to the manager
         /// </summary>
         protected virtual void OnInitialize()
+        {
+            // Override in derived classes if needed
+        }
+
+        /// <summary>
+        /// Additional shutdown logic specific to the manager
+        /// </summary>
+        protected virtual void OnShutdown()
         {
             // Override in derived classes if needed
         }

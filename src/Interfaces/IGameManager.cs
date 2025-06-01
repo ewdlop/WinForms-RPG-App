@@ -18,6 +18,11 @@ namespace WinFormsApp1.Interfaces
         bool IsGameRunning { get; }
 
         /// <summary>
+        /// Whether the game has unsaved changes
+        /// </summary>
+        bool HasUnsavedChanges { get; }
+
+        /// <summary>
         /// Start a new game with the specified player
         /// </summary>
         /// <param name="player">Player to start the game with</param>

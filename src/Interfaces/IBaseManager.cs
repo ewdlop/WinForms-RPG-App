@@ -11,6 +11,11 @@ namespace WinFormsApp1.Interfaces
         void Initialize();
 
         /// <summary>
+        /// Shutdown the manager and clean up resources
+        /// </summary>
+        void Shutdown();
+
+        /// <summary>
         /// Clean up resources and unsubscribe from events
         /// </summary>
         void Cleanup();

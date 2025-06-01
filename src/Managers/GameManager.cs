@@ -20,10 +20,12 @@ namespace WinFormsApp1.Managers
         private DateTime _gameStartTime;
         private DateTime _sessionStartTime;
         private readonly Dictionary<string, Func<string[], CommandResult>> _commandHandlers;
+        private bool _hasUnsavedChanges;
 
         public override string ManagerName => "GameManager";
         public GameState CurrentGameState => _currentGameState;
         public bool IsGameRunning => _currentGameState == GameState.Running || _currentGameState == GameState.InCombat;
+        public bool HasUnsavedChanges => _hasUnsavedChanges;
 
         public GameManager(IEventManager eventManager, IPlayerManager playerManager) : base(eventManager)
         {
@@ -72,6 +74,7 @@ namespace WinFormsApp1.Managers
             _gameStatistics = new GameStatistics();
             _gameStartTime = DateTime.UtcNow;
             _sessionStartTime = DateTime.UtcNow;
+            _hasUnsavedChanges = true; // New game has unsaved changes
 
             // Change game state
             ChangeGameState(GameState.Running, "New game started");
@@ -96,6 +99,7 @@ namespace WinFormsApp1.Managers
                 if (success)
                 {
                     _sessionStartTime = DateTime.UtcNow;
+                    _hasUnsavedChanges = false; // Loaded game has no unsaved changes
                     ChangeGameState(GameState.Running, "Game loaded successfully");
                     EventManager.Publish(new GameLoadedEvent(saveSlot, _playerManager.CurrentPlayer, true));
                     _gameStatistics.LoadCount++;
@@ -142,6 +146,7 @@ namespace WinFormsApp1.Managers
                     ChangeGameState(previousState, "Game saved successfully");
                     EventManager.Publish(new GameSavedEvent(saveSlot, _playerManager.CurrentPlayer, true, "", 1024));
                     _gameStatistics.SaveCount++;
+                    _hasUnsavedChanges = false; // Clear unsaved changes flag
                     LogMessage($"Game saved successfully to slot {saveSlot}");
                 }
                 else
@@ -375,8 +380,11 @@ namespace WinFormsApp1.Managers
 
         private void InitializeCommandHandlers()
         {
+            // Basic commands
             _commandHandlers["help"] = args => new CommandResult(true, "Available commands: " + string.Join(", ", GetAvailableCommands()));
             _commandHandlers["quit"] = args => { EndGame(); return new CommandResult(true, "Game ended"); };
+            
+            // Save/Load commands
             _commandHandlers["save"] = args => 
             {
                 var slot = args.Length > 0 && int.TryParse(args[0], out int s) ? s : 1;
@@ -388,6 +396,124 @@ namespace WinFormsApp1.Managers
                 var slot = args.Length > 0 && int.TryParse(args[0], out int s) ? s : 1;
                 var success = LoadGame(slot);
                 return new CommandResult(success, success ? $"Game loaded from slot {slot}" : "Failed to load game");
+            };
+
+            // Player-related commands that delegate to PlayerManager
+            _commandHandlers["stats"] = args =>
+            {
+                var player = _playerManager.CurrentPlayer;
+                if (player == null)
+                    return new CommandResult(false, "", "No character loaded");
+
+                var stats = $"=== Character Stats ===\n" +
+                           $"Name: {player.Name}\n" +
+                           $"Class: {player.CharacterClass}\n" +
+                           $"Level: {player.Level}\n" +
+                           $"Health: {player.Health}/{player.MaxHealth}\n" +
+                           $"Attack: {player.Attack}\n" +
+                           $"Defense: {player.Defense}\n" +
+                           $"Experience: {player.Experience}/{player.ExperienceToNextLevel}\n" +
+                           $"Gold: {player.Gold}\n" +
+                           $"Skill Points: {player.SkillPoints}";
+                
+                return new CommandResult(true, stats);
+            };
+
+            _commandHandlers["heal"] = args =>
+            {
+                var player = _playerManager.CurrentPlayer;
+                if (player == null)
+                    return new CommandResult(false, "", "No character loaded");
+
+                if (args.Length > 0 && int.TryParse(args[0], out int amount))
+                {
+                    _playerManager.Heal(amount, "Command");
+                    return new CommandResult(true, $"Healed for {amount} health");
+                }
+                else
+                {
+                    _playerManager.Heal(player.MaxHealth, "Command");
+                    return new CommandResult(true, "Fully healed");
+                }
+            };
+
+            // Game state commands
+            _commandHandlers["pause"] = args =>
+            {
+                PauseGame();
+                return new CommandResult(true, "Game paused");
+            };
+
+            _commandHandlers["resume"] = args =>
+            {
+                ResumeGame();
+                return new CommandResult(true, "Game resumed");
+            };
+
+            _commandHandlers["status"] = args =>
+            {
+                var status = $"Game State: {_currentGameState}\n" +
+                           $"Running: {IsGameRunning}\n" +
+                           $"Unsaved Changes: {HasUnsavedChanges}\n" +
+                           $"Session Time: {(DateTime.UtcNow - _sessionStartTime).TotalMinutes:F1} minutes";
+                return new CommandResult(true, status);
+            };
+
+            // Feature toggle commands
+            _commandHandlers["features"] = args =>
+            {
+                if (args.Length == 0)
+                {
+                    var features = string.Join("\n", _featureFlags.Select(f => $"{f.Key}: {(f.Value ? "Enabled" : "Disabled")}"));
+                    return new CommandResult(true, $"=== Features ===\n{features}");
+                }
+                else if (args.Length == 2)
+                {
+                    var featureName = args[0];
+                    var enabled = args[1].ToLowerInvariant() == "on" || args[1].ToLowerInvariant() == "true";
+                    SetFeatureEnabled(featureName, enabled);
+                    return new CommandResult(true, $"Feature '{featureName}' {(enabled ? "enabled" : "disabled")}");
+                }
+                return new CommandResult(false, "", "Usage: features [feature_name on/off]");
+            };
+
+            // Statistics command
+            _commandHandlers["statistics"] = args =>
+            {
+                var stats = GetGameStatistics();
+                var statsText = $"=== Game Statistics ===\n" +
+                              $"Total Play Time: {stats.TotalPlayTime:F1} minutes\n" +
+                              $"Enemies Defeated: {stats.EnemiesDefeated}\n" +
+                              $"Items Collected: {stats.ItemsCollected}\n" +
+                              $"Locations Visited: {stats.LocationsVisited}\n" +
+                              $"Times Leveled Up: {stats.TimesLeveledUp}\n" +
+                              $"Gold Earned: {stats.GoldEarned}\n" +
+                              $"Experience Gained: {stats.ExperienceGained}\n" +
+                              $"Death Count: {stats.DeathCount}\n" +
+                              $"Save Count: {stats.SaveCount}\n" +
+                              $"Load Count: {stats.LoadCount}";
+                return new CommandResult(true, statsText);
+            };
+
+            // Cheat commands (if enabled)
+            _commandHandlers["cheat"] = args =>
+            {
+                if (!IsFeatureEnabled("CheatCodes"))
+                    return new CommandResult(false, "", "Cheat codes are disabled");
+
+                if (args.Length == 0)
+                    return new CommandResult(false, "", "Usage: cheat <cheat_code> [parameters]");
+
+                var cheatCode = string.Join(" ", args);
+                var success = ProcessCheat(cheatCode);
+                return new CommandResult(success, success ? "Cheat activated" : "Invalid cheat code");
+            };
+
+            // Clear command
+            _commandHandlers["clear"] = args =>
+            {
+                EventManager.Publish(new GameMessageEvent("Screen cleared", GameMessageType.System));
+                return new CommandResult(true, "");
             };
         }
 
@@ -415,45 +541,51 @@ namespace WinFormsApp1.Managers
         private void OnPlayerLeveledUp(PlayerLeveledUpEvent e)
         {
             _gameStatistics.TimesLeveledUp++;
-            UpdateStatistics("TimesLeveledUp", _gameStatistics.TimesLeveledUp - 1, _gameStatistics.TimesLeveledUp);
+            MarkUnsavedChanges();
         }
 
         private void OnPlayerDied(PlayerDiedEvent e)
         {
             _gameStatistics.DeathCount++;
-            UpdateStatistics("DeathCount", _gameStatistics.DeathCount - 1, _gameStatistics.DeathCount);
+            MarkUnsavedChanges();
         }
 
         private void OnPlayerExperienceGained(PlayerExperienceGainedEvent e)
         {
             _gameStatistics.ExperienceGained += e.ExperienceGained;
-            UpdateStatistics("ExperienceGained", _gameStatistics.ExperienceGained - e.ExperienceGained, _gameStatistics.ExperienceGained);
+            MarkUnsavedChanges();
         }
 
         private void OnPlayerGoldChanged(PlayerGoldChangedEvent e)
         {
-            if (e.IsGain)
+            if (e.NewGold > e.OldGold)
             {
-                _gameStatistics.GoldEarned += e.Delta;
-                UpdateStatistics("GoldEarned", _gameStatistics.GoldEarned - e.Delta, _gameStatistics.GoldEarned);
+                _gameStatistics.GoldEarned += (e.NewGold - e.OldGold);
             }
+            MarkUnsavedChanges();
         }
 
         private void OnEnemyDefeated(EnemyDefeatedEvent e)
         {
             _gameStatistics.EnemiesDefeated++;
-            UpdateStatistics("EnemiesDefeated", _gameStatistics.EnemiesDefeated - 1, _gameStatistics.EnemiesDefeated);
+            MarkUnsavedChanges();
         }
 
         private void OnItemAdded(ItemAddedEvent e)
         {
-            _gameStatistics.ItemsCollected += e.Quantity;
-            UpdateStatistics("ItemsCollected", _gameStatistics.ItemsCollected - e.Quantity, _gameStatistics.ItemsCollected);
+            _gameStatistics.ItemsCollected++;
+            MarkUnsavedChanges();
         }
 
-        private void UpdateStatistics(string statName, object oldValue, object newValue)
+        /// <summary>
+        /// Mark that the game has unsaved changes
+        /// </summary>
+        private void MarkUnsavedChanges()
         {
-            EventManager.Publish(new StatisticsUpdatedEvent(_gameStatistics, statName, oldValue, newValue));
+            if (_currentGameState == GameState.Running || _currentGameState == GameState.InCombat)
+            {
+                _hasUnsavedChanges = true;
+            }
         }
     }
 } 
