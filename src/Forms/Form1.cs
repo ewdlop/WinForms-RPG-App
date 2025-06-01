@@ -1,9 +1,10 @@
 using System;
-using System.Drawing;
-using System.Windows.Forms;
-using System.Linq;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using WinFormsApp1.Controls;
+using WinFormsApp1.Events;
 
 namespace WinFormsApp1
 {
@@ -30,8 +31,16 @@ namespace WinFormsApp1
         public Form1()
         {
             InitializeComponent();
-            InitializeGameUI();
+            eventManager = GameEventManager.Instance;
             gameEngine = new GameEngine(this);
+
+            // Subscribe to events
+            eventManager.SubscribeToMessageEvents(this);
+            eventManager.SubscribeToPlayerEvents(this);
+            eventManager.SubscribeToCombatEvents(this);
+            eventManager.SubscribeToGameStateEvents(this);
+
+            SetupUI();
         }
 
         private void InitializeGameUI()
