@@ -6,7 +6,7 @@ namespace WinFormsApp1.Constants
     {
         // Game Information
         public const string GAME_TITLE = "Realm of Aethermoor";
-        public const string GAME_VERSION = "1.0";
+        public const string GAME_VERSION = "1.0.0";
         
         // Default Locations
         public const string DEFAULT_LOCATION = "village";
@@ -141,7 +141,7 @@ namespace WinFormsApp1.Constants
         // Save File Names
         public const string QUICK_SAVE = "QuickSave";
         public const string AUTO_SAVE_PREFIX = "AutoSave_";
-        public const string QUICK_SAVE_COMMAND = "quicksave";
+        public const string QUICK_SAVE_COMMAND = "quick";
         
         // File Paths and Extensions
         public const string DATA_PATH = "Assets/Data";
@@ -156,16 +156,16 @@ namespace WinFormsApp1.Constants
         public const string SAVE_FOLDER_NAME = "SavedGames";
         
         // Default Values
-        public const int DEFAULT_GOLD_AMOUNT = 1000;
-        public const int DEFAULT_EXP_AMOUNT = 100;
+        public const int DEFAULT_GOLD_AMOUNT = 100;
+        public const int DEFAULT_EXP_AMOUNT = 50;
         public const int DEFAULT_LEVEL_UP_COUNT = 1;
         public const int MAX_LEVEL = 100;
         public const int MIN_LEVEL = 1;
-        public const int MAX_STAT_VALUE = 9999;
+        public const int MAX_STAT_VALUE = 999;
         public const int MIN_STAT_VALUE = 1;
         public const int MAX_GOLD = 999999;
-        public const int MAX_SKILL_POINTS = 999;
-        public const double RANDOM_ENCOUNTER_CHANCE = 0.3;
+        public const int MAX_SKILL_POINTS = 100;
+        public const double RANDOM_ENCOUNTER_CHANCE = 0.15;
         public const double FLEE_SUCCESS_RATE = 0.7;
         
         // Combat Messages

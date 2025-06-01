@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.ComponentModel;
 using System.Linq;
 using WinFormsApp1.Controls;
+using WinFormsApp1.Constants;
 
 namespace WinFormsApp1
 {
@@ -15,6 +16,7 @@ namespace WinFormsApp1
         private Button createButton;
         private Button cancelButton;
         private DataLoader dataLoader;
+        private Label descriptionLabel;
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Player CreatedCharacter { get; private set; }
@@ -23,280 +25,181 @@ namespace WinFormsApp1
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Player CreatedPlayer => CreatedCharacter;
 
-        public CharacterCreationDialog() : this(new DataLoader())
+        public CharacterCreationDialog()
         {
-            // Default constructor that creates its own DataLoader
-        }
-
-        public CharacterCreationDialog(DataLoader dataLoader)
-        {
-            this.dataLoader = dataLoader;
             InitializeComponent();
+            dataLoader = new DataLoader();
+            LoadCharacterClasses();
         }
 
         private void InitializeComponent()
         {
-            this.Text = "Create Your Character";
-            this.Size = new Size(400, 520);
-            this.MinimumSize = new Size(380, 500);
+            this.Text = "Create New Character";
+            this.Size = new Size(400, 300);
             this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.Sizable;
-            this.MaximizeBox = true;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            // Load data if not already loaded
-            try
-            {
-                dataLoader.LoadAllData();
-            }
-            catch
-            {
-                // If loading fails, we'll use fallback classes
-            }
-
             // Title label
-            Label titleLabel = new Label
+            var titleLabel = new Label
             {
-                Text = "Create Your Hero",
-                Font = new Font("Arial", 16, FontStyle.Bold),
-                ForeColor = Color.DarkBlue,
+                Text = "Create Your Character",
+                Font = new Font("Arial", 14, FontStyle.Bold),
                 Location = new Point(20, 20),
                 Size = new Size(350, 30),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                TextAlign = ContentAlignment.MiddleCenter
             };
+            this.Controls.Add(titleLabel);
 
             // Name label and textbox
-            Label nameLabel = new Label
+            var nameLabel = new Label
             {
                 Text = "Character Name:",
-                Location = new Point(20, 70),
-                Size = new Size(100, 20),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left
+                Location = new Point(20, 60),
+                Size = new Size(100, 20)
             };
+            this.Controls.Add(nameLabel);
 
             nameTextBox = new TextBox
             {
-                Location = new Point(130, 68),
+                Location = new Point(130, 58),
                 Size = new Size(200, 20),
-                Text = "Hero",
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                MaxLength = 20
             };
+            nameTextBox.TextChanged += NameTextBox_TextChanged;
+            this.Controls.Add(nameTextBox);
 
             // Class label and combobox
-            Label classLabel = new Label
+            var classLabel = new Label
             {
                 Text = "Character Class:",
-                Location = new Point(20, 110),
-                Size = new Size(100, 20),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left
+                Location = new Point(20, 90),
+                Size = new Size(100, 20)
             };
+            this.Controls.Add(classLabel);
 
             classComboBox = new ComboBox
             {
-                Location = new Point(130, 108),
+                Location = new Point(130, 88),
                 Size = new Size(200, 20),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                DropDownStyle = ComboBoxStyle.DropDownList
             };
+            classComboBox.SelectedIndexChanged += ClassComboBox_SelectedIndexChanged;
+            this.Controls.Add(classComboBox);
 
-            // Load character classes from JSON data with fallback
-            try
+            // Description label
+            descriptionLabel = new Label
             {
-                var availableClasses = dataLoader.GetAvailableClasses();
-                classComboBox.Items.AddRange(availableClasses.Select(c => c.Name).ToArray());
-            }
-            catch
+                Location = new Point(20, 120),
+                Size = new Size(350, 80),
+                Text = "Select a character class to see its description.",
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.LightGray
+            };
+            this.Controls.Add(descriptionLabel);
+
+            // OK button
+            createButton = new Button
             {
-                // Fallback to hardcoded classes if JSON loading fails
-                classComboBox.Items.AddRange(new string[] { "Warrior", "Mage", "Rogue", "Cleric" });
+                Text = "Create Character",
+                Location = new Point(130, 220),
+                Size = new Size(120, 30),
+                Enabled = false
+            };
+            createButton.Click += CreateButton_Click;
+            this.Controls.Add(createButton);
+
+            // Cancel button
+            cancelButton = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(260, 220),
+                Size = new Size(80, 30),
+                DialogResult = DialogResult.Cancel
+            };
+            this.Controls.Add(cancelButton);
+
+            this.AcceptButton = createButton;
+            this.CancelButton = cancelButton;
+        }
+
+        private void LoadCharacterClasses()
+        {
+            var classes = dataLoader.LoadCharacterClasses();
+            
+            foreach (var classInfo in classes)
+            {
+                classComboBox.Items.Add(classInfo);
             }
 
             if (classComboBox.Items.Count > 0)
             {
                 classComboBox.SelectedIndex = 0;
             }
-            classComboBox.SelectedIndexChanged += ClassComboBox_SelectedIndexChanged;
+        }
 
-            // Stats display using custom control
-            statsDisplay = new CharacterStatsDisplayControl
-            {
-                Location = new Point(20, 150),
-                Size = new Size(350, 230),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
-            };
-
-            // Buttons - positioned lower with more space
-            createButton = new Button
-            {
-                Text = "Create Character",
-                Location = new Point(130, 400),
-                Size = new Size(120, 30),
-                BackColor = Color.Green,
-                ForeColor = Color.White,
-                DialogResult = DialogResult.OK,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
-            };
-            createButton.Click += CreateButton_Click;
-
-            cancelButton = new Button
-            {
-                Text = "Cancel",
-                Location = new Point(260, 400),
-                Size = new Size(80, 30),
-                BackColor = Color.Gray,
-                ForeColor = Color.White,
-                DialogResult = DialogResult.Cancel,
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
-            };
-
-            // Add controls to form
-            this.Controls.AddRange(new Control[] {
-                titleLabel, nameLabel, nameTextBox, classLabel, classComboBox,
-                statsDisplay, createButton, cancelButton
-            });
-
-            // Update stats display initially
-            UpdateStatsDisplay();
+        private void NameTextBox_TextChanged(object sender, EventArgs e)
+        {
+            UpdateOkButton();
         }
 
         private void ClassComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            UpdateStatsDisplay();
+            if (classComboBox.SelectedItem is CharacterClassInfo selectedClass)
+            {
+                descriptionLabel.Text = $"{selectedClass.Name}\n\n{selectedClass.Description}\n\n" +
+                    $"Starting Stats:\n" +
+                    $"Health: {selectedClass.StartingHealth}\n" +
+                    $"Attack: {selectedClass.StartingAttack}\n" +
+                    $"Defense: {selectedClass.StartingDefense}";
+            }
+            UpdateOkButton();
         }
 
-        private void UpdateStatsDisplay()
+        private void UpdateOkButton()
         {
-            string selectedClassName = classComboBox.SelectedItem?.ToString() ?? "";
-            
-            try
-            {
-                var classInfo = dataLoader.GetClassInfo(selectedClassName);
-                statsDisplay.UpdateDisplay(classInfo, dataLoader);
-            }
-            catch
-            {
-                // Fallback display if data loading fails
-                statsDisplay.UpdateDisplay(CreateFallbackClassInfo(selectedClassName), dataLoader);
-            }
-        }
-
-        private CharacterClassInfo CreateFallbackClassInfo(string className)
-        {
-            // Create fallback class info for basic functionality
-            var fallbackClass = new CharacterClassInfo
-            {
-                Name = className,
-                Description = $"A brave {className.ToLower()}",
-                BaseStats = new BaseStats
-                {
-                    MaxHealth = 100,
-                    Attack = 10,
-                    Defense = 5
-                },
-                StartingItems = new System.Collections.Generic.List<string>()
-            };
-
-            switch (className.ToLower())
-            {
-                case "warrior":
-                    fallbackClass.BaseStats.Attack = 15;
-                    fallbackClass.BaseStats.Defense = 10;
-                    fallbackClass.StartingItems.Add("Iron Sword");
-                    fallbackClass.StartingItems.Add("Leather Armor");
-                    break;
-                case "mage":
-                    fallbackClass.BaseStats.Attack = 8;
-                    fallbackClass.BaseStats.Defense = 3;
-                    fallbackClass.StartingItems.Add("Magic Staff");
-                    fallbackClass.StartingItems.Add("Mana Potion");
-                    break;
-                case "rogue":
-                    fallbackClass.BaseStats.Attack = 12;
-                    fallbackClass.BaseStats.Defense = 6;
-                    fallbackClass.StartingItems.Add("Dagger");
-                    fallbackClass.StartingItems.Add("Lockpicks");
-                    break;
-                case "cleric":
-                    fallbackClass.BaseStats.Attack = 9;
-                    fallbackClass.BaseStats.Defense = 8;
-                    fallbackClass.StartingItems.Add("Holy Symbol");
-                    fallbackClass.StartingItems.Add("Health Potion");
-                    break;
-            }
-
-            return fallbackClass;
+            createButton.Enabled = !string.IsNullOrWhiteSpace(nameTextBox.Text) && 
+                                  classComboBox.SelectedItem != null;
         }
 
         private void CreateButton_Click(object sender, EventArgs e)
         {
-            string characterName = nameTextBox.Text.Trim();
-            
-            if (string.IsNullOrEmpty(characterName))
+            if (classComboBox.SelectedItem is CharacterClassInfo selectedClass)
             {
-                MessageBox.Show("Please enter a character name.", "Invalid Name", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                CreatedCharacter = CreatePlayerFromClass(nameTextBox.Text.Trim(), selectedClass);
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
-
-            if (characterName.Length > 20)
-            {
-                MessageBox.Show("Character name must be 20 characters or less.", "Name Too Long", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            string selectedClassName = classComboBox.SelectedItem?.ToString() ?? "Warrior";
-            
-            try
-            {
-                CreatedCharacter = dataLoader.CreatePlayerFromClass(characterName, selectedClassName);
-            }
-            catch
-            {
-                // Fallback character creation if data loading fails
-                CreatedCharacter = CreateFallbackPlayer(characterName, selectedClassName);
-            }
-            
-            this.DialogResult = DialogResult.OK;
-            this.Close();
         }
 
-        private Player CreateFallbackPlayer(string name, string className)
+        private Player CreatePlayerFromClass(string name, CharacterClassInfo classInfo)
         {
-            var player = new Player(name, (CharacterClass)Enum.Parse(typeof(CharacterClass), className, true));
-            
-            // Set basic stats based on class
-            switch (className.ToLower())
+            var player = new Player
             {
-                case "warrior":
-                    player.Attack = 15;
-                    player.Defense = 10;
-                    player.MaxHealth = 120;
-                    break;
-                case "mage":
-                    player.Attack = 8;
-                    player.Defense = 3;
-                    player.MaxHealth = 80;
-                    break;
-                case "rogue":
-                    player.Attack = 12;
-                    player.Defense = 6;
-                    player.MaxHealth = 100;
-                    break;
-                case "cleric":
-                    player.Attack = 9;
-                    player.Defense = 8;
-                    player.MaxHealth = 110;
-                    break;
-                default:
-                    player.Attack = 10;
-                    player.Defense = 5;
-                    player.MaxHealth = 100;
-                    break;
+                Name = name,
+                CharacterClass = classInfo.Class,
+                Level = 1,
+                MaxHealth = classInfo.StartingHealth,
+                Health = classInfo.StartingHealth,
+                Attack = classInfo.StartingAttack,
+                Defense = classInfo.StartingDefense,
+                Experience = 0,
+                ExperienceToNextLevel = 100,
+                Gold = 50,
+                SkillPoints = 0
+            };
+
+            // Clear default inventory and add class-specific items
+            player.Inventory.Clear();
+            foreach (var item in classInfo.StartingItems)
+            {
+                player.Inventory.Add(new Item(item.Name, item.Description, item.Type, item.Value, item.Price));
             }
 
-            player.Health = player.MaxHealth;
+            // Add a basic health potion for all classes
+            player.Inventory.Add(new Item(GameConstants.HEALTH_POTION, "Restores 20 health", ItemType.Potion, 20, 15));
+
             return player;
         }
     }

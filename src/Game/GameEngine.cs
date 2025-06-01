@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
 using WinFormsApp1.Constants;
+using WinFormsApp1.Events;
 
 namespace WinFormsApp1
 {
@@ -13,6 +19,8 @@ namespace WinFormsApp1
         private Random random;
         private bool isInCombat;
         private Enemy currentEnemy;
+        private GameEventManager eventManager;
+        private GameEventLogger eventLogger;
 
         // Cheat system variables
         private bool cheatsEnabled = false;
@@ -49,6 +57,8 @@ namespace WinFormsApp1
             gameForm = form;
             random = new Random();
             dataLoader = new DataLoader();
+            eventManager = GameEventManager.Instance;
+            eventLogger = new GameEventLogger();
             LoadGameData();
         }
 
@@ -58,12 +68,12 @@ namespace WinFormsApp1
             {
                 dataLoader.LoadAllData();
                 locations = dataLoader.LoadLocations();
-                gameForm.DisplayText("Game data loaded successfully from JSON files.", Color.Green);
+                eventManager.PublishMessage("Game data loaded successfully from JSON files.", Color.Green, MessageType.System);
             }
             catch (Exception ex)
             {
-                gameForm.DisplayText($"Error loading game data: {ex.Message}", Color.Red);
-                gameForm.DisplayText("Using fallback data...", Color.Yellow);
+                eventManager.PublishMessage($"Error loading game data: {ex.Message}", Color.Red, MessageType.Error);
+                eventManager.PublishMessage("Using fallback data...", Color.Yellow, MessageType.System);
                 InitializeFallbackData();
             }
         }
@@ -96,12 +106,13 @@ namespace WinFormsApp1
                     // Enable game controls now that we have a player
                     gameForm.EnableGameControls(true);
                     
-                    DisplayMessage("=== Welcome to the Realm of Aethermoor ===");
-                    DisplayMessage($"Welcome, {player.Name} the {player.CharacterClass}!");
-                    DisplayMessage("Your adventure begins in the peaceful village of Elderbrook.");
-                    DisplayMessage("Type 'help' for a list of commands, or 'look' to examine your surroundings.");
-                    DisplayMessage("");
+                    eventManager.PublishMessage("=== Welcome to the Realm of Aethermoor ===", Color.Cyan, MessageType.System);
+                    eventManager.PublishMessage($"Welcome, {player.Name} the {player.CharacterClass}!", Color.Green, MessageType.System);
+                    eventManager.PublishMessage("Your adventure begins in the peaceful village of Elderbrook.", Color.White, MessageType.System);
+                    eventManager.PublishMessage("Type 'help' for a list of commands, or 'look' to examine your surroundings.", Color.Yellow, MessageType.System);
+                    eventManager.PublishMessage("", Color.White, MessageType.Normal);
                     
+                    eventManager.PublishGameStateChange("GameStarted", player);
                     ShowLocation();
                     UpdateCharacterDisplay();
                     HasUnsavedChanges = true;
@@ -118,6 +129,9 @@ namespace WinFormsApp1
             string[] args = parts.Skip(1).ToArray();
 
             HasUnsavedChanges = true;
+
+            // Publish command executed event
+            eventManager.PublishCommandExecuted(command, args, player);
 
             // Check for cheat activation sequence
             CheckCheatActivation(command);
@@ -201,7 +215,7 @@ namespace WinFormsApp1
                     gameForm.Close();
                     break;
                 default:
-                    gameForm.DisplayText(GameConstants.UNKNOWN_COMMAND_MSG, Color.Red);
+                    eventManager.PublishMessage(GameConstants.UNKNOWN_COMMAND_MSG, Color.Red, MessageType.Error);
                     break;
             }
 
@@ -239,13 +253,14 @@ namespace WinFormsApp1
             if (!cheatsEnabled)
             {
                 cheatsEnabled = true;
-                DisplayMessage(GameConstants.CHEAT_ACTIVATED_MSG, Color.Magenta);
-                DisplayMessage("Type 'cheathelp' for available cheat commands.", Color.Cyan);
-                DisplayMessage("Note: Using cheats may affect game balance!", Color.Yellow);
+                eventManager.PublishMessage(GameConstants.CHEAT_ACTIVATED_MSG, Color.Magenta, MessageType.Cheat);
+                eventManager.PublishMessage("Type 'cheathelp' for available cheat commands.", Color.Cyan, MessageType.Cheat);
+                eventManager.PublishMessage("Note: Using cheats may affect game balance!", Color.Yellow, MessageType.Warning);
+                eventManager.PublishCheatActivated("cheats_enabled", new string[0], player);
             }
             else
             {
-                DisplayMessage("Cheats are already enabled!", Color.Cyan);
+                eventManager.PublishMessage("Cheats are already enabled!", Color.Cyan, MessageType.Cheat);
             }
         }
 
@@ -253,7 +268,7 @@ namespace WinFormsApp1
         {
             if (player == null && !command.StartsWith(GameConstants.CMD_CHEAT))
             {
-                DisplayMessage(GameConstants.START_GAME_FOR_CHEATS_MSG, Color.Red);
+                eventManager.PublishMessage(GameConstants.START_GAME_FOR_CHEATS_MSG, Color.Red, MessageType.Error);
                 return true;
             }
 
@@ -364,98 +379,98 @@ namespace WinFormsApp1
 
         private void ShowCheatHelp()
         {
-            DisplayMessage(GameConstants.CHEAT_HELP_MSG, Color.Magenta);
-            DisplayMessage("", Color.White);
-            DisplayMessage("🎮 GAME STATE:", Color.Cyan);
-            DisplayMessage("  godmode/god - Toggle invincibility", Color.White);
-            DisplayMessage("  infinitehealth/infhealth - Toggle infinite health", Color.White);
-            DisplayMessage("  infinitegold/infgold - Toggle infinite gold", Color.White);
-            DisplayMessage("  noclip - Toggle movement restrictions", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("💰 RESOURCES:", Color.Cyan);
-            DisplayMessage($"  addgold [amount] - Add gold (default: {GameConstants.DEFAULT_GOLD_AMOUNT})", Color.White);
-            DisplayMessage($"  addexp [amount] - Add experience (default: {GameConstants.DEFAULT_EXP_AMOUNT})", Color.White);
-            DisplayMessage("  heal/fullheal - Restore full health", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("📊 CHARACTER:", Color.Cyan);
-            DisplayMessage($"  levelup [count] - Level up (default: {GameConstants.DEFAULT_LEVEL_UP_COUNT})", Color.White);
-            DisplayMessage("  setlevel [level] - Set specific level", Color.White);
-            DisplayMessage("  maxstats - Maximize all stats", Color.White);
-            DisplayMessage("  setstats [att] [def] [hp] - Set attack/defense/health", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("🎒 INVENTORY:", Color.Cyan);
-            DisplayMessage("  additem [name] - Add item to inventory", Color.White);
-            DisplayMessage("  clearinventory - Remove all items", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("🗺️ WORLD:", Color.Cyan);
-            DisplayMessage("  teleport [location] - Travel to location", Color.White);
-            DisplayMessage("  spawnenemy [name] - Spawn enemy in current location", Color.White);
-            DisplayMessage("  killallenemies - Remove all enemies from location", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("🔧 DEBUG:", Color.Cyan);
-            DisplayMessage("  showdebug - Display debug information", Color.White);
-            DisplayMessage("  resetgame - Reset to initial state", Color.White);
-            DisplayMessage("  disablecheats - Turn off cheat mode", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage($"Available locations: {GameConstants.VILLAGE_LOCATION}, {GameConstants.FOREST_LOCATION}, {GameConstants.PLAINS_LOCATION}, {GameConstants.CAVE_LOCATION}, {GameConstants.RUINS_LOCATION}, {GameConstants.LAIR_LOCATION}", Color.Gray);
+            eventManager.PublishMessage(GameConstants.CHEAT_HELP_MSG, Color.Magenta, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("🎮 GAME STATE:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("  godmode/god - Toggle invincibility", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  infinitehealth/infhealth - Toggle infinite health", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  infinitegold/infgold - Toggle infinite gold", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  noclip - Toggle movement restrictions", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("💰 RESOURCES:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage($"  addgold [amount] - Add gold (default: {GameConstants.DEFAULT_GOLD_AMOUNT})", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"  addexp [amount] - Add experience (default: {GameConstants.DEFAULT_EXP_AMOUNT})", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  heal/fullheal - Restore full health", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("📊 CHARACTER:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage($"  levelup [count] - Level up (default: {GameConstants.DEFAULT_LEVEL_UP_COUNT})", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  setlevel [level] - Set specific level", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  maxstats - Maximize all stats", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  setstats [att] [def] [hp] - Set attack/defense/health", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("🎒 INVENTORY:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("  additem [name] - Add item to inventory", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  clearinventory - Remove all items", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("🗺️ WORLD:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("  teleport [location] - Travel to location", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  spawnenemy [name] - Spawn enemy in current location", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  killallenemies - Remove all enemies from location", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("🔧 DEBUG:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("  showdebug - Display debug information", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  resetgame - Reset to initial state", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  disablecheats - Turn off cheat mode", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage($"Available locations: {GameConstants.VILLAGE_LOCATION}, {GameConstants.FOREST_LOCATION}, {GameConstants.PLAINS_LOCATION}, {GameConstants.CAVE_LOCATION}, {GameConstants.RUINS_LOCATION}, {GameConstants.LAIR_LOCATION}", Color.Gray, MessageType.System);
         }
 
         private void ShowCheatActivationHelp()
         {
-            DisplayMessage(GameConstants.CHEAT_ACTIVATION_MSG, Color.Yellow);
-            DisplayMessage("", Color.White);
-            DisplayMessage("🎮 How to Activate Cheats:", Color.Cyan);
-            DisplayMessage("", Color.White);
-            DisplayMessage("Method 1 - Classic Gaming References:", Color.Green);
-            DisplayMessage($"  Type: {GameConstants.CHEAT_IDDQD}", Color.White);
-            DisplayMessage($"  Type: {GameConstants.CHEAT_IDKFA}", Color.White);
-            DisplayMessage($"  Type: {GameConstants.CHEAT_THEREISNOSPOON}", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("Method 2 - Konami Code Sequence:", Color.Green);
-            DisplayMessage("  Type these commands in order:", Color.White);
-            DisplayMessage($"  {GameConstants.CHEAT_UP} → {GameConstants.CHEAT_UP} → {GameConstants.CHEAT_DOWN} → {GameConstants.CHEAT_DOWN} → {GameConstants.CHEAT_LEFT} → {GameConstants.CHEAT_RIGHT} → {GameConstants.CHEAT_LEFT} → {GameConstants.CHEAT_RIGHT} → {GameConstants.CHEAT_B} → {GameConstants.CHEAT_A}", Color.Gray);
-            DisplayMessage("", Color.White);
-            DisplayMessage("Method 3 - Direct Activation:", Color.Green);
-            DisplayMessage($"  Type: {GameConstants.CHEAT_KONAMI}", Color.White);
-            DisplayMessage("", Color.White);
-            DisplayMessage("💡 Tips:", Color.Yellow);
-            DisplayMessage("  • Commands are case-insensitive", Color.Gray);
-            DisplayMessage("  • Once activated, type 'cheathelp' for all cheat commands", Color.Gray);
-            DisplayMessage("  • Cheats affect game balance - use responsibly!", Color.Orange);
-            DisplayMessage("  • You can disable cheats anytime with 'disablecheats'", Color.Gray);
-            DisplayMessage("", Color.White);
-            DisplayMessage("🎯 Popular Cheat Commands (once activated):", Color.Cyan);
-            DisplayMessage("  god - Invincibility mode", Color.White);
-            DisplayMessage("  addgold 9999 - Lots of gold", Color.White);
-            DisplayMessage("  maxstats - Maximize all stats", Color.White);
-            DisplayMessage("  teleport [location] - Instant travel", Color.White);
-            DisplayMessage("", Color.White);
+            eventManager.PublishMessage(GameConstants.CHEAT_ACTIVATION_MSG, Color.Yellow, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("🎮 How to Activate Cheats:", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("Method 1 - Classic Gaming References:", Color.Green, MessageType.Cheat);
+            eventManager.PublishMessage($"  Type: {GameConstants.CHEAT_IDDQD}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"  Type: {GameConstants.CHEAT_IDKFA}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"  Type: {GameConstants.CHEAT_THEREISNOSPOON}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("Method 2 - Konami Code Sequence:", Color.Green, MessageType.Cheat);
+            eventManager.PublishMessage("  Type these commands in order:", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"  {GameConstants.CHEAT_UP} → {GameConstants.CHEAT_UP} → {GameConstants.CHEAT_DOWN} → {GameConstants.CHEAT_DOWN} → {GameConstants.CHEAT_LEFT} → {GameConstants.CHEAT_RIGHT} → {GameConstants.CHEAT_LEFT} → {GameConstants.CHEAT_RIGHT} → {GameConstants.CHEAT_B} → {GameConstants.CHEAT_A}", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("Method 3 - Direct Activation:", Color.Green, MessageType.Cheat);
+            eventManager.PublishMessage($"  Type: {GameConstants.CHEAT_KONAMI}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("💡 Tips:", Color.Yellow, MessageType.Cheat);
+            eventManager.PublishMessage("  • Commands are case-insensitive", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage("  • Once activated, type 'cheathelp' for all cheat commands", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage("  • Cheats affect game balance - use responsibly!", Color.Orange, MessageType.Warning);
+            eventManager.PublishMessage("  • You can disable cheats anytime with 'disablecheats'", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
+            eventManager.PublishMessage("🎯 Popular Cheat Commands (once activated):", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("  god - Invincibility mode", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  addgold 9999 - Lots of gold", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  maxstats - Maximize all stats", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("  teleport [location] - Instant travel", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage("", Color.White, MessageType.Normal);
         }
 
         private void ToggleGodMode()
         {
             godModeEnabled = !godModeEnabled;
-            DisplayMessage($"God Mode: {(godModeEnabled ? "ENABLED" : "DISABLED")}", 
-                godModeEnabled ? Color.Gold : Color.Gray);
+            eventManager.PublishMessage($"God Mode: {(godModeEnabled ? "ENABLED" : "DISABLED")}", 
+                godModeEnabled ? Color.Gold : Color.Gray, MessageType.Cheat);
             
             if (godModeEnabled)
             {
-                DisplayMessage("You are now invincible!", Color.Yellow);
+                eventManager.PublishMessage("You are now invincible!", Color.Yellow, MessageType.Cheat);
             }
         }
 
         private void ToggleInfiniteHealth()
         {
             infiniteHealthEnabled = !infiniteHealthEnabled;
-            DisplayMessage($"Infinite Health: {(infiniteHealthEnabled ? "ENABLED" : "DISABLED")}", 
-                infiniteHealthEnabled ? Color.Green : Color.Gray);
+            eventManager.PublishMessage($"Infinite Health: {(infiniteHealthEnabled ? "ENABLED" : "DISABLED")}", 
+                infiniteHealthEnabled ? Color.Green : Color.Gray, MessageType.Cheat);
         }
 
         private void ToggleInfiniteGold()
         {
             infiniteGoldEnabled = !infiniteGoldEnabled;
-            DisplayMessage($"Infinite Gold: {(infiniteGoldEnabled ? "ENABLED" : "DISABLED")}", 
-                infiniteGoldEnabled ? Color.Gold : Color.Gray);
+            eventManager.PublishMessage($"Infinite Gold: {(infiniteGoldEnabled ? "ENABLED" : "DISABLED")}", 
+                infiniteGoldEnabled ? Color.Gold : Color.Gray, MessageType.Cheat);
         }
 
         private void AddGold(string[] args)
@@ -467,7 +482,7 @@ namespace WinFormsApp1
             }
 
             player.Gold += amount;
-            DisplayMessage($"Added {amount} gold! Total: {player.Gold}", Color.Gold);
+            eventManager.PublishMessage($"Added {amount} gold! Total: {player.Gold}", Color.Gold, MessageType.Cheat);
             UpdateCharacterDisplay();
         }
 
@@ -489,10 +504,10 @@ namespace WinFormsApp1
                 LevelUp();
             }
 
-            DisplayMessage($"Added {amount} experience!", Color.Cyan);
+            eventManager.PublishMessage($"Added {amount} experience!", Color.Cyan, MessageType.Cheat);
             if (player.Level > oldLevel)
             {
-                DisplayMessage($"Level increased from {oldLevel} to {player.Level}!", Color.Gold);
+                eventManager.PublishMessage($"Level increased from {oldLevel} to {player.Level}!", Color.Gold, MessageType.Cheat);
             }
             UpdateCharacterDisplay();
         }
@@ -511,7 +526,7 @@ namespace WinFormsApp1
                 LevelUp();
             }
 
-            DisplayMessage($"Leveled up {count} times! Level: {oldLevel} → {player.Level}", Color.Gold);
+            eventManager.PublishMessage($"Leveled up {count} times! Level: {oldLevel} → {player.Level}", Color.Gold, MessageType.Cheat);
             UpdateCharacterDisplay();
         }
 
@@ -519,7 +534,7 @@ namespace WinFormsApp1
         {
             if (args.Length == 0 || !int.TryParse(args[0], out int level))
             {
-                DisplayMessage("Usage: setlevel [level]", Color.Red);
+                eventManager.PublishMessage("Usage: setlevel [level]", Color.Red, MessageType.Error);
                 return;
             }
 
@@ -545,14 +560,14 @@ namespace WinFormsApp1
                 player.Experience = 0;
             }
 
-            DisplayMessage($"Level set to {level}! (was {oldLevel})", Color.Gold);
+            eventManager.PublishMessage($"Level set to {level}! (was {oldLevel})", Color.Gold, MessageType.Cheat);
             UpdateCharacterDisplay();
         }
 
         private void FullHeal()
         {
             player.Health = player.MaxHealth;
-            DisplayMessage($"Fully healed! Health: {player.Health}/{player.MaxHealth}", Color.Green);
+            eventManager.PublishMessage($"Fully healed! Health: {player.Health}/{player.MaxHealth}", Color.Green, MessageType.Cheat);
             UpdateCharacterDisplay();
         }
 
@@ -560,8 +575,8 @@ namespace WinFormsApp1
         {
             if (args.Length == 0)
             {
-                DisplayMessage("Usage: additem [item name]", Color.Red);
-                DisplayMessage("Available items: potion, sword, shield, bow, dagger", Color.Gray);
+                eventManager.PublishMessage("Usage: additem [item name]", Color.Red, MessageType.Error);
+                eventManager.PublishMessage("Available items: potion, sword, shield, bow, dagger", Color.Gray, MessageType.System);
                 return;
             }
 
@@ -588,11 +603,11 @@ namespace WinFormsApp1
             if (item != null)
             {
                 player.Inventory.Add(item);
-                DisplayMessage($"Added {item.Name} to inventory!", Color.Green);
+                eventManager.PublishMessage($"Added {item.Name} to inventory!", Color.Green, MessageType.Cheat);
             }
             else
             {
-                DisplayMessage($"Unknown item: {itemName}", Color.Red);
+                eventManager.PublishMessage($"Unknown item: {itemName}", Color.Red, MessageType.Error);
             }
         }
 
@@ -600,15 +615,15 @@ namespace WinFormsApp1
         {
             int itemCount = player.Inventory.Count;
             player.Inventory.Clear();
-            DisplayMessage($"Removed {itemCount} items from inventory.", Color.Orange);
+            eventManager.PublishMessage($"Removed {itemCount} items from inventory.", Color.Orange, MessageType.Cheat);
         }
 
         private void TeleportToLocation(string[] args)
         {
             if (args.Length == 0)
             {
-                DisplayMessage("Usage: teleport [location]", Color.Red);
-                DisplayMessage("Available locations: " + string.Join(", ", locations.Keys), Color.Gray);
+                eventManager.PublishMessage("Usage: teleport [location]", Color.Red, MessageType.Error);
+                eventManager.PublishMessage("Available locations: " + string.Join(", ", locations.Keys), Color.Gray, MessageType.System);
                 return;
             }
 
@@ -617,26 +632,26 @@ namespace WinFormsApp1
             if (locations.ContainsKey(locationKey))
             {
                 currentLocation = locations[locationKey];
-                DisplayMessage($"⚡ Teleported to {currentLocation.Name}!", Color.Magenta);
+                eventManager.PublishMessage($"⚡ Teleported to {currentLocation.Name}!", Color.Magenta, MessageType.Cheat);
                 ShowLocation();
                 UpdateCharacterDisplay();
             }
             else
             {
-                DisplayMessage($"Unknown location: {locationKey}", Color.Red);
-                DisplayMessage("Available locations: " + string.Join(", ", locations.Keys), Color.Gray);
+                eventManager.PublishMessage($"Unknown location: {locationKey}", Color.Red, MessageType.Error);
+                eventManager.PublishMessage("Available locations: " + string.Join(", ", locations.Keys), Color.Gray, MessageType.System);
             }
         }
 
         private void ToggleNoClip()
         {
             noClipModeEnabled = !noClipModeEnabled;
-            DisplayMessage($"No-Clip Mode: {(noClipModeEnabled ? "ENABLED" : "DISABLED")}", 
-                noClipModeEnabled ? Color.Cyan : Color.Gray);
+            eventManager.PublishMessage($"No-Clip Mode: {(noClipModeEnabled ? "ENABLED" : "DISABLED")}", 
+                noClipModeEnabled ? Color.Cyan : Color.Gray, MessageType.Cheat);
             
             if (noClipModeEnabled)
             {
-                DisplayMessage("You can now move to any location without restrictions!", Color.Yellow);
+                eventManager.PublishMessage("You can now move to any location without restrictions!", Color.Yellow, MessageType.Cheat);
             }
         }
 
@@ -644,8 +659,8 @@ namespace WinFormsApp1
         {
             if (args.Length == 0)
             {
-                DisplayMessage("Usage: spawnenemy [enemy name]", Color.Red);
-                DisplayMessage("Available enemies: goblin, orc, troll, dragon", Color.Gray);
+                eventManager.PublishMessage("Usage: spawnenemy [enemy name]", Color.Red, MessageType.Error);
+                eventManager.PublishMessage("Available enemies: goblin, orc, troll, dragon", Color.Gray, MessageType.System);
                 return;
             }
 
@@ -661,7 +676,7 @@ namespace WinFormsApp1
             };
 
             currentLocation.Enemies.Add(enemy);
-            DisplayMessage($"Spawned {enemy.Name} in {currentLocation.Name}!", Color.Red);
+            eventManager.PublishMessage($"Spawned {enemy.Name} in {currentLocation.Name}!", Color.Red, MessageType.Cheat);
         }
 
         private void KillAllEnemies()
@@ -679,7 +694,7 @@ namespace WinFormsApp1
                 }
             }
 
-            DisplayMessage($"Removed {enemyCount} enemies from {currentLocation.Name}.", Color.Orange);
+            eventManager.PublishMessage($"Removed {enemyCount} enemies from {currentLocation.Name}.", Color.Orange, MessageType.Cheat);
         }
 
         private void MaximizeStats()
@@ -690,9 +705,9 @@ namespace WinFormsApp1
             player.Gold = GameConstants.MAX_GOLD;
             player.SkillPoints = GameConstants.MAX_SKILL_POINTS;
 
-            DisplayMessage("All stats maximized!", Color.Gold);
-            DisplayMessage($"Health: {GameConstants.MAX_STAT_VALUE}, Attack: {GameConstants.MAX_STAT_VALUE / 10}, Defense: {GameConstants.MAX_STAT_VALUE / 10}", Color.Yellow);
-            DisplayMessage($"Gold: {GameConstants.MAX_GOLD:N0}, Skill Points: {GameConstants.MAX_SKILL_POINTS}", Color.Yellow);
+            eventManager.PublishMessage("All stats maximized!", Color.Gold, MessageType.Cheat);
+            eventManager.PublishMessage($"Health: {GameConstants.MAX_STAT_VALUE}, Attack: {GameConstants.MAX_STAT_VALUE / 10}, Defense: {GameConstants.MAX_STAT_VALUE / 10}", Color.Yellow, MessageType.Cheat);
+            eventManager.PublishMessage($"Gold: {GameConstants.MAX_GOLD:N0}, Skill Points: {GameConstants.MAX_SKILL_POINTS}", Color.Yellow, MessageType.Cheat);
             UpdateCharacterDisplay();
         }
 
@@ -700,7 +715,7 @@ namespace WinFormsApp1
         {
             if (args.Length < 3)
             {
-                DisplayMessage("Usage: setstats [attack] [defense] [health]", Color.Red);
+                eventManager.PublishMessage("Usage: setstats [attack] [defense] [health]", Color.Red, MessageType.Error);
                 return;
             }
 
@@ -713,31 +728,31 @@ namespace WinFormsApp1
                 player.MaxHealth = Math.Max(GameConstants.MIN_STAT_VALUE, Math.Min(GameConstants.MAX_STAT_VALUE, health));
                 player.Health = player.MaxHealth;
 
-                DisplayMessage($"Stats set - Attack: {player.Attack}, Defense: {player.Defense}, Health: {player.Health}", Color.Gold);
+                eventManager.PublishMessage($"Stats set - Attack: {player.Attack}, Defense: {player.Defense}, Health: {player.Health}", Color.Gold, MessageType.Cheat);
                 UpdateCharacterDisplay();
             }
             else
             {
-                DisplayMessage("Invalid numbers provided!", Color.Red);
+                eventManager.PublishMessage("Invalid numbers provided!", Color.Red, MessageType.Error);
             }
         }
 
         private void ShowDebugInfo()
         {
-            DisplayMessage(GameConstants.DEBUG_INFO_MSG, Color.Cyan);
-            DisplayMessage($"Cheats Enabled: {cheatsEnabled}", Color.White);
-            DisplayMessage($"God Mode: {godModeEnabled}", Color.White);
-            DisplayMessage($"Infinite Health: {infiniteHealthEnabled}", Color.White);
-            DisplayMessage($"Infinite Gold: {infiniteGoldEnabled}", Color.White);
-            DisplayMessage($"No-Clip Mode: {noClipModeEnabled}", Color.White);
-            DisplayMessage($"In Combat: {isInCombat}", Color.White);
-            DisplayMessage($"Current Location: {currentLocation?.Key} ({currentLocation?.Name})", Color.White);
-            DisplayMessage($"Player Level: {player?.Level}", Color.White);
-            DisplayMessage($"Player Health: {player?.Health}/{player?.MaxHealth}", Color.White);
-            DisplayMessage($"Player Gold: {player?.Gold}", Color.White);
-            DisplayMessage($"Inventory Items: {player?.Inventory?.Count}", Color.White);
-            DisplayMessage($"Location Enemies: {currentLocation?.Enemies?.Count}", Color.White);
-            DisplayMessage($"Location Items: {currentLocation?.Items?.Count}", Color.White);
+            eventManager.PublishMessage(GameConstants.DEBUG_INFO_MSG, Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage($"Cheats Enabled: {cheatsEnabled}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"God Mode: {godModeEnabled}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Infinite Health: {infiniteHealthEnabled}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Infinite Gold: {infiniteGoldEnabled}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"No-Clip Mode: {noClipModeEnabled}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"In Combat: {isInCombat}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Current Location: {currentLocation?.Key} ({currentLocation?.Name})", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Player Level: {player?.Level}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Player Health: {player?.Health}/{player?.MaxHealth}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Player Gold: {player?.Gold}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Inventory Items: {player?.Inventory?.Count}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Location Enemies: {currentLocation?.Enemies?.Count}", Color.White, MessageType.Cheat);
+            eventManager.PublishMessage($"Location Items: {currentLocation?.Items?.Count}", Color.White, MessageType.Cheat);
         }
 
         private void ResetGameState()
@@ -761,7 +776,7 @@ namespace WinFormsApp1
                 // Reset to starting location
                 currentLocation = locations[GameConstants.DEFAULT_LOCATION];
 
-                DisplayMessage("Game state reset to beginning!", Color.Orange);
+                eventManager.PublishMessage("Game state reset to beginning!", Color.Orange, MessageType.Cheat);
                 ShowLocation();
                 UpdateCharacterDisplay();
             }
@@ -776,7 +791,7 @@ namespace WinFormsApp1
             noClipModeEnabled = false;
             cheatActivationSequence = 0;
 
-            DisplayMessage("Cheat codes disabled. Game balance restored.", Color.Gray);
+            eventManager.PublishMessage("Cheat codes disabled. Game balance restored.", Color.Gray, MessageType.Cheat);
         }
 
         private void ProcessCombatCommand(string command, string[] args)
@@ -799,49 +814,51 @@ namespace WinFormsApp1
                     AttemptFlee();
                     break;
                 default:
-                    gameForm.DisplayText(GameConstants.COMBAT_COMMANDS_MSG, Color.Yellow);
+                    eventManager.PublishMessage(GameConstants.COMBAT_COMMANDS_MSG, Color.Yellow, MessageType.Cheat);
                     break;
             }
         }
 
         private void ShowLocation()
         {
-            gameForm.DisplayText($"=== {currentLocation.Name} ===", Color.Cyan);
-            gameForm.DisplayText(currentLocation.Description);
-            gameForm.DisplayText("");
+            eventManager.PublishMessage($"=== {currentLocation.Name} ===", Color.Cyan, MessageType.System);
+            eventManager.PublishMessage(currentLocation.Description, null, MessageType.System);
+            eventManager.PublishMessage("", null, MessageType.Normal);
 
             if (currentLocation.Items.Any())
             {
-                gameForm.DisplayText("Items here:", Color.Yellow);
+                eventManager.PublishMessage("Items here:", Color.Yellow, MessageType.System);
                 foreach (var item in currentLocation.Items)
                 {
-                    gameForm.DisplayText($"  - {item.Name}");
+                    eventManager.PublishMessage($"  - {item.Name}", null, MessageType.System);
                 }
-                gameForm.DisplayText("");
+                eventManager.PublishMessage("", null, MessageType.Normal);
             }
 
             if (currentLocation.Enemies.Any())
             {
-                gameForm.DisplayText("Enemies present:", Color.Red);
+                eventManager.PublishMessage("Enemies present:", Color.Red, MessageType.System);
                 foreach (var enemy in currentLocation.Enemies)
                 {
-                    gameForm.DisplayText($"  - {enemy.Name} (Level {enemy.Level})");
+                    eventManager.PublishMessage($"  - {enemy.Name} (Level {enemy.Level})", null, MessageType.System);
                 }
-                gameForm.DisplayText("");
+                eventManager.PublishMessage("", null, MessageType.Normal);
             }
 
             if (currentLocation.Exits.Any())
             {
-                gameForm.DisplayText("Exits:", Color.Cyan);
+                eventManager.PublishMessage("Exits:", Color.Cyan, MessageType.System);
                 foreach (var exit in currentLocation.Exits)
                 {
-                    gameForm.DisplayText($"  {exit.Key} - {exit.Value}");
+                    eventManager.PublishMessage($"  {exit.Key} - {exit.Value}", null, MessageType.System);
                 }
             }
         }
 
         private void Move(string direction)
         {
+            var oldLocation = currentLocation;
+
             if (noClipModeEnabled)
             {
                 // In no-clip mode, allow movement to any location
@@ -856,7 +873,8 @@ namespace WinFormsApp1
                         if (locations.ContainsKey(direction.ToLower()))
                         {
                             currentLocation = locations[direction.ToLower()];
-                            DisplayMessage($"⚡ No-clip teleport to {currentLocation.Name}!", Color.Magenta);
+                            eventManager.PublishMessage($"⚡ No-clip teleport to {currentLocation.Name}!", Color.Magenta, MessageType.Cheat);
+                            eventManager.PublishLocationChange(player, oldLocation, currentLocation, "noclip");
                             ShowLocation();
                             return;
                         }
@@ -871,17 +889,17 @@ namespace WinFormsApp1
                 if (locations.ContainsKey(nextLocationKey))
                 {
                     currentLocation = locations[nextLocationKey];
-                    DisplayMessage($"You move {direction} to {currentLocation.Name}.", Color.Green);
+                    eventManager.PublishLocationChange(player, oldLocation, currentLocation, direction);
                     ShowLocation();
                     CheckRandomEncounter();
                 }
             }
             else
             {
-                DisplayMessage(GameConstants.CANT_GO_THAT_WAY_MSG, Color.Red);
+                eventManager.PublishMessage(GameConstants.CANT_GO_THAT_WAY_MSG, Color.Red, MessageType.Error);
                 if (currentLocation?.Exits?.Any() == true)
                 {
-                    DisplayMessage($"Available exits: {string.Join(", ", currentLocation.Exits.Keys)}", Color.Yellow);
+                    eventManager.PublishMessage($"Available exits: {string.Join(", ", currentLocation.Exits.Keys)}", Color.Yellow, MessageType.System);
                 }
             }
         }
@@ -909,46 +927,46 @@ namespace WinFormsApp1
                 _ => new Enemy { Name = "Strange Creature", Health = 30, MaxHealth = 30, Attack = 8, Defense = 2, Experience = 20, Gold = 10 }
             };
 
-            DisplayMessage($"A {randomEnemy.Name} blocks your path!", Color.Red);
+            eventManager.PublishMessage($"A {randomEnemy.Name} blocks your path!", Color.Red, MessageType.System);
             StartCombat(randomEnemy);
         }
 
         public void ShowInventory()
         {
-            gameForm.DisplayText(GameConstants.INVENTORY_MSG, Color.Yellow);
+            eventManager.PublishMessage(GameConstants.INVENTORY_MSG, Color.Yellow, MessageType.System);
             if (player.Inventory.Any())
             {
                 foreach (var item in player.Inventory)
                 {
-                    gameForm.DisplayText($"  - {item.Name}: {item.Description}");
+                    eventManager.PublishMessage($"  - {item.Name}: {item.Description}", null, MessageType.System);
                 }
             }
             else
             {
-                gameForm.DisplayText(GameConstants.INVENTORY_EMPTY_MSG);
+                eventManager.PublishMessage(GameConstants.INVENTORY_EMPTY_MSG, null, MessageType.System);
             }
-            gameForm.DisplayText("");
+            eventManager.PublishMessage("", null, MessageType.Normal);
         }
 
         public void ShowCharacterStats()
         {
-            gameForm.DisplayText(GameConstants.CHARACTER_STATS_MSG, Color.Cyan);
-            gameForm.DisplayText($"Name: {player.Name}");
-            gameForm.DisplayText($"Class: {player.CharacterClass}");
-            gameForm.DisplayText($"Level: {player.Level}");
-            gameForm.DisplayText($"Experience: {player.Experience}/{player.ExperienceToNextLevel}");
-            gameForm.DisplayText($"Health: {player.Health}/{player.MaxHealth}");
-            gameForm.DisplayText($"Attack: {player.Attack}");
-            gameForm.DisplayText($"Defense: {player.Defense}");
-            gameForm.DisplayText($"Gold: {player.Gold}");
-            gameForm.DisplayText("");
+            eventManager.PublishMessage(GameConstants.CHARACTER_STATS_MSG, Color.Cyan, MessageType.System);
+            eventManager.PublishMessage($"Name: {player.Name}", null, MessageType.System);
+            eventManager.PublishMessage($"Class: {player.CharacterClass}", null, MessageType.System);
+            eventManager.PublishMessage($"Level: {player.Level}", null, MessageType.System);
+            eventManager.PublishMessage($"Experience: {player.Experience}/{player.ExperienceToNextLevel}", null, MessageType.System);
+            eventManager.PublishMessage($"Health: {player.Health}/{player.MaxHealth}", null, MessageType.System);
+            eventManager.PublishMessage($"Attack: {player.Attack}", null, MessageType.System);
+            eventManager.PublishMessage($"Defense: {player.Defense}", null, MessageType.System);
+            eventManager.PublishMessage($"Gold: {player.Gold}", null, MessageType.System);
+            eventManager.PublishMessage("", null, MessageType.Normal);
         }
 
         private void TakeItem(string itemName)
         {
             if (string.IsNullOrEmpty(itemName))
             {
-                gameForm.DisplayText("Take what?", Color.Yellow);
+                eventManager.PublishMessage("Take what?", Color.Yellow, MessageType.System);
                 return;
             }
 
@@ -959,11 +977,11 @@ namespace WinFormsApp1
             {
                 player.Inventory.Add(item);
                 currentLocation.Items.Remove(item);
-                gameForm.DisplayText($"You take the {item.Name}.", Color.Green);
+                eventManager.PublishInventoryChange(player, item, true, 1, currentLocation);
             }
             else
             {
-                gameForm.DisplayText(GameConstants.NO_SUCH_ITEM_MSG, Color.Red);
+                eventManager.PublishMessage(GameConstants.NO_SUCH_ITEM_MSG, Color.Red, MessageType.Error);
             }
         }
 
@@ -971,7 +989,7 @@ namespace WinFormsApp1
         {
             if (string.IsNullOrEmpty(itemName))
             {
-                gameForm.DisplayText("Use what?", Color.Yellow);
+                eventManager.PublishMessage("Use what?", Color.Yellow, MessageType.System);
                 return;
             }
 
@@ -983,22 +1001,24 @@ namespace WinFormsApp1
                 switch (item.Type)
                 {
                     case ItemType.Potion:
+                        int healAmount = Math.Min(item.Value, player.MaxHealth - player.Health);
                         player.Health = Math.Min(player.MaxHealth, player.Health + item.Value);
                         player.Inventory.Remove(item);
-                        gameForm.DisplayText($"You drink the {item.Name} and restore {item.Value} health.", Color.Green);
+                        eventManager.PublishItemUsed(player, item, $"restored {item.Value} health", true);
+                        eventManager.PublishHealthChange(player, healAmount, $"used {item.Name}");
                         break;
                     case ItemType.Weapon:
                         // Equip weapon logic would go here
-                        gameForm.DisplayText($"You equip the {item.Name}.", Color.Green);
+                        eventManager.PublishItemUsed(player, item, "equipped weapon", false);
                         break;
                     default:
-                        gameForm.DisplayText($"You can't use the {item.Name} right now.", Color.Yellow);
+                        eventManager.PublishMessage($"You can't use the {item.Name} right now.", Color.Yellow, MessageType.System);
                         break;
                 }
             }
             else
             {
-                gameForm.DisplayText("You don't have that item.", Color.Red);
+                eventManager.PublishMessage("You don't have that item.", Color.Red, MessageType.Error);
             }
         }
 
@@ -1012,7 +1032,7 @@ namespace WinFormsApp1
                 }
                 else
                 {
-                    gameForm.DisplayText(GameConstants.NOTHING_TO_ATTACK_MSG, Color.Red);
+                    eventManager.PublishMessage(GameConstants.NOTHING_TO_ATTACK_MSG, Color.Red, MessageType.System);
                 }
                 return;
             }
@@ -1026,7 +1046,7 @@ namespace WinFormsApp1
             }
             else
             {
-                gameForm.DisplayText(GameConstants.NO_SUCH_ENEMY_MSG, Color.Red);
+                eventManager.PublishMessage(GameConstants.NO_SUCH_ENEMY_MSG, Color.Red, MessageType.Error);
             }
         }
 
@@ -1034,9 +1054,8 @@ namespace WinFormsApp1
         {
             isInCombat = true;
             currentEnemy = enemy;
-            DisplayMessage($"A {enemy.Name} appears! {GameConstants.COMBAT_BEGIN_MSG}", Color.Red);
-            DisplayMessage($"Enemy Health: {enemy.Health}/{enemy.MaxHealth}", Color.Orange);
-            DisplayMessage(GameConstants.COMBAT_COMMANDS_MSG, Color.Yellow);
+            eventManager.PublishCombatStart(player, enemy);
+            eventManager.PublishMessage(GameConstants.COMBAT_COMMANDS_MSG, Color.Yellow, MessageType.Combat);
             
             // Set combat mode in status bar
             if (gameForm is Form1 form1)
@@ -1048,15 +1067,21 @@ namespace WinFormsApp1
         private void PerformAttack()
         {
             int damage = Math.Max(1, player.Attack - currentEnemy.Defense + random.Next(-2, 3));
+            bool isCritical = random.NextDouble() < 0.1; // 10% critical chance
             
             // God mode makes attacks more powerful
             if (godModeEnabled)
             {
                 damage *= 10;
             }
+
+            if (isCritical)
+            {
+                damage = (int)(damage * 1.5);
+            }
             
             currentEnemy.Health -= damage;
-            gameForm.DisplayText($"You attack {currentEnemy.Name} for {damage} damage!", Color.Yellow);
+            eventManager.PublishCombatAction(player, currentEnemy, "attack", damage, true, isCritical);
 
             if (currentEnemy.Health <= 0)
             {
@@ -1069,11 +1094,12 @@ namespace WinFormsApp1
 
         private void PerformDefend()
         {
-            gameForm.DisplayText("You raise your guard, reducing incoming damage.", Color.Cyan);
+            eventManager.PublishMessage("You raise your guard, reducing incoming damage.", Color.Cyan, MessageType.System);
             // Reduce enemy damage by half this turn
             int damage = Math.Max(1, (currentEnemy.Attack - player.Defense) / 2 + random.Next(-1, 2));
             player.Health -= damage;
-            gameForm.DisplayText($"{currentEnemy.Name} attacks you for {damage} damage!", Color.Red);
+            eventManager.PublishCombatAction(player, currentEnemy, "defends", damage, false);
+            eventManager.PublishHealthChange(player, -damage, $"{currentEnemy.Name} defense");
 
             if (player.Health <= 0)
             {
@@ -1086,13 +1112,14 @@ namespace WinFormsApp1
             // God mode prevents all damage
             if (godModeEnabled)
             {
-                gameForm.DisplayText($"{currentEnemy.Name} attacks but cannot harm you!", Color.Cyan);
+                eventManager.PublishMessage($"{currentEnemy.Name} attacks but cannot harm you!", Color.Cyan, MessageType.Combat);
                 return;
             }
 
             int damage = Math.Max(1, currentEnemy.Attack - player.Defense + random.Next(-2, 3));
             player.Health -= damage;
-            gameForm.DisplayText($"{currentEnemy.Name} attacks you for {damage} damage!", Color.Red);
+            eventManager.PublishCombatAction(player, currentEnemy, "attacks", damage, false);
+            eventManager.PublishHealthChange(player, -damage, $"{currentEnemy.Name} attack");
 
             // Infinite health restores health to full
             if (infiniteHealthEnabled)
@@ -1110,32 +1137,30 @@ namespace WinFormsApp1
         {
             if (random.NextDouble() < GameConstants.FLEE_SUCCESS_RATE)
             {
-                gameForm.DisplayText(GameConstants.COMBAT_FLEE_SUCCESS_MSG, Color.Green);
+                eventManager.PublishMessage(GameConstants.COMBAT_FLEE_SUCCESS_MSG, Color.Green, MessageType.System);
                 EndCombat();
             }
             else
             {
-                gameForm.DisplayText(GameConstants.COMBAT_FLEE_FAIL_MSG, Color.Red);
+                eventManager.PublishMessage(GameConstants.COMBAT_FLEE_FAIL_MSG, Color.Red, MessageType.System);
                 EnemyAttack();
             }
         }
 
         private void WinCombat()
         {
-            int expGained = currentEnemy.Level * 25;
-            int goldGained = random.Next(10, 30) * currentEnemy.Level;
+            int expGained = currentEnemy.Experience;
+            int goldGained = currentEnemy.Gold;
+            var lootGained = new List<Item>(currentEnemy.LootTable);
             
-            DisplayMessage($"{GameConstants.COMBAT_VICTORY_MSG} {currentEnemy.Name}!", Color.Green);
-            DisplayMessage($"You gained {expGained} experience and {goldGained} gold!", Color.Yellow);
-            
+            // Add experience and gold
             player.Experience += expGained;
             player.Gold += goldGained;
 
-            // Show experience and gold gain in status bar
-            if (gameForm is Form1 form1)
+            // Add loot to inventory
+            foreach (var item in lootGained)
             {
-                form1.ShowExperienceGain(expGained);
-                form1.ShowGoldChange(goldGained);
+                player.Inventory.Add(item);
             }
 
             // Check for level up
@@ -1147,30 +1172,30 @@ namespace WinFormsApp1
                 leveledUp = true;
             }
 
-            // Handle loot drops
-            HandleLootDrops();
+            // Publish events
+            eventManager.PublishCombatEnd(player, currentEnemy, true, expGained, goldGained, lootGained);
+            eventManager.PublishExperienceGain(player, expGained, leveledUp);
+            eventManager.PublishGoldChange(player, goldGained, "combat victory");
+            
+            foreach (var item in lootGained)
+            {
+                eventManager.PublishInventoryChange(player, item, true);
+            }
             
             EndCombat();
             UpdateCharacterDisplay();
         }
 
-        private void HandleLootDrops()
-        {
-            foreach (var lootItem in currentEnemy.LootTable)
-            {
-                // For now, just add all loot items (in a real implementation, you'd check drop chances)
-                player.Inventory.Add(lootItem);
-                gameForm.DisplayText($"You found: {lootItem.Name}!", Color.Magenta);
-            }
-        }
-
         private void LoseCombat()
         {
-            gameForm.DisplayText(GameConstants.COMBAT_DEFEAT_MSG, Color.Red);
-            gameForm.DisplayText("You wake up back in the village, wounded but alive.", Color.Yellow);
+            eventManager.PublishCombatEnd(player, currentEnemy, false);
+            eventManager.PublishMessage("You wake up back in the village, wounded but alive.", Color.Yellow, MessageType.System);
             
             player.Health = player.MaxHealth / 2;
+            var oldLocation = currentLocation;
             currentLocation = locations[GameConstants.DEFAULT_LOCATION];
+            eventManager.PublishLocationChange(player, oldLocation, currentLocation, "defeat");
+            eventManager.PublishHealthChange(player, player.Health - player.MaxHealth, "combat defeat");
             EndCombat();
             ShowLocation();
         }
@@ -1191,57 +1216,53 @@ namespace WinFormsApp1
         {
             int oldLevel = player.Level;
             player.Level++;
-            player.MaxHealth += 10;
+            
+            int healthGain = 10;
+            int attackGain = 2;
+            int defenseGain = 1;
+            int skillPointsGain = 5;
+            
+            player.MaxHealth += healthGain;
             player.Health = player.MaxHealth; // Full heal on level up
-            player.Attack += 2;
-            player.Defense += 1;
-            player.SkillPoints += 5; // Award skill points
+            player.Attack += attackGain;
+            player.Defense += defenseGain;
+            player.SkillPoints += skillPointsGain;
             player.ExperienceToNextLevel = player.Level * 100;
 
-            DisplayMessage($"{GameConstants.LEVEL_UP_MSG} {player.Level}!", Color.Gold);
-            DisplayMessage($"Health increased to {player.MaxHealth}!", Color.Green);
-            DisplayMessage($"Attack increased to {player.Attack}!", Color.Green);
-            DisplayMessage($"Defense increased to {player.Defense}!", Color.Green);
-            DisplayMessage($"You gained 5 skill points! Use 'skills' to spend them.", Color.Cyan);
-            DisplayMessage("");
-
-            // Show level up notification in status bar
-            if (gameForm is Form1 form1)
-            {
-                form1.ShowLevelUp(oldLevel, player.Level);
-            }
+            eventManager.PublishPlayerLevelUp(player, oldLevel, player.Level, healthGain, attackGain, defenseGain, skillPointsGain);
+            eventManager.PublishHealthChange(player, player.MaxHealth, "level up full heal");
 
             UpdateCharacterDisplay();
         }
 
         public void ShowHelp()
         {
-            gameForm.DisplayText(GameConstants.HELP_MSG, Color.Cyan);
-            gameForm.DisplayText("Movement: go [direction], north, south, east, west");
-            gameForm.DisplayText("Interaction: look, take [item], use [item]");
-            gameForm.DisplayText("Character: inventory (inv), stats, skills, help");
-            gameForm.DisplayText("Combat: attack [enemy], defend, flee");
-            gameForm.DisplayText("Game: save [name], load [name], saves/list, quit");
-            gameForm.DisplayText("Special: cheat/cheats - Show cheat code information");
-            gameForm.DisplayText("");
-            gameForm.DisplayText("Save Commands:");
-            gameForm.DisplayText("  save - Quick save with timestamp");
-            gameForm.DisplayText("  save [name] - Save with custom name");
-            gameForm.DisplayText("  load - Load quick save");
-            gameForm.DisplayText("  load [name] - Load specific save");
-            gameForm.DisplayText("  saves/list - Show all available saves");
-            gameForm.DisplayText("");
-            gameForm.DisplayText("Character Development:");
-            gameForm.DisplayText("  skills - Open skill tree to learn new abilities");
-            gameForm.DisplayText("");
-            gameForm.DisplayText(GameConstants.CHEAT_ACTIVATION_MSG, Color.Yellow);
-            gameForm.DisplayText("To activate cheats, try these classic commands:", Color.Yellow);
-            gameForm.DisplayText($"  • {GameConstants.CHEAT_IDDQD} (Doom god mode)", Color.Gray);
-            gameForm.DisplayText($"  • {GameConstants.CHEAT_IDKFA} (Doom all weapons)", Color.Gray);
-            gameForm.DisplayText($"  • {GameConstants.CHEAT_THEREISNOSPOON} (Matrix reference)", Color.Gray);
-            gameForm.DisplayText($"  • Konami Code: {GameConstants.CHEAT_UP} {GameConstants.CHEAT_UP} {GameConstants.CHEAT_DOWN} {GameConstants.CHEAT_DOWN} {GameConstants.CHEAT_LEFT} {GameConstants.CHEAT_RIGHT} {GameConstants.CHEAT_LEFT} {GameConstants.CHEAT_RIGHT} {GameConstants.CHEAT_B} {GameConstants.CHEAT_A}", Color.Gray);
-            gameForm.DisplayText("Once activated, type 'cheathelp' for cheat commands!", Color.Cyan);
-            gameForm.DisplayText("");
+            eventManager.PublishMessage(GameConstants.HELP_MSG, Color.Cyan, MessageType.System);
+            eventManager.PublishMessage("Movement: go [direction], north, south, east, west", null, MessageType.System);
+            eventManager.PublishMessage("Interaction: look, take [item], use [item]", null, MessageType.System);
+            eventManager.PublishMessage("Character: inventory (inv), stats, skills, help", null, MessageType.System);
+            eventManager.PublishMessage("Combat: attack [enemy], defend, flee", null, MessageType.System);
+            eventManager.PublishMessage("Game: save [name], load [name], saves/list, quit", null, MessageType.System);
+            eventManager.PublishMessage("Special: cheat/cheats - Show cheat code information", null, MessageType.System);
+            eventManager.PublishMessage("", null, MessageType.Normal);
+            eventManager.PublishMessage("Save Commands:", null, MessageType.System);
+            eventManager.PublishMessage("  save - Quick save with timestamp", null, MessageType.System);
+            eventManager.PublishMessage("  save [name] - Save with custom name", null, MessageType.System);
+            eventManager.PublishMessage("  load - Load quick save", null, MessageType.System);
+            eventManager.PublishMessage("  load [name] - Load specific save", null, MessageType.System);
+            eventManager.PublishMessage("  saves/list - Show all available saves", null, MessageType.System);
+            eventManager.PublishMessage("", null, MessageType.Normal);
+            eventManager.PublishMessage("Character Development:", null, MessageType.System);
+            eventManager.PublishMessage("  skills - Open skill tree to learn new abilities", null, MessageType.System);
+            eventManager.PublishMessage("", null, MessageType.Normal);
+            eventManager.PublishMessage(GameConstants.CHEAT_ACTIVATION_MSG, Color.Yellow, MessageType.Cheat);
+            eventManager.PublishMessage("To activate cheats, try these classic commands:", Color.Yellow, MessageType.Cheat);
+            eventManager.PublishMessage($"  • {GameConstants.CHEAT_IDDQD} (Doom god mode)", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage($"  • {GameConstants.CHEAT_IDKFA} (Doom all weapons)", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage($"  • {GameConstants.CHEAT_THEREISNOSPOON} (Matrix reference)", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage($"  • Konami Code: {GameConstants.CHEAT_UP} {GameConstants.CHEAT_UP} {GameConstants.CHEAT_DOWN} {GameConstants.CHEAT_DOWN} {GameConstants.CHEAT_LEFT} {GameConstants.CHEAT_RIGHT} {GameConstants.CHEAT_LEFT} {GameConstants.CHEAT_RIGHT} {GameConstants.CHEAT_B} {GameConstants.CHEAT_A}", Color.Gray, MessageType.Cheat);
+            eventManager.PublishMessage("Once activated, type 'cheathelp' for cheat commands!", Color.Cyan, MessageType.Cheat);
+            eventManager.PublishMessage("", null, MessageType.Normal);
         }
 
         public void SaveGame(string saveName = null)
@@ -1270,13 +1291,12 @@ namespace WinFormsApp1
                 string saveFilePath = GetSaveFilePath(saveName);
                 File.WriteAllText(saveFilePath, saveJson);
                 
-                gameForm.DisplayText($"Game saved as '{saveName}'.", Color.Green);
-                gameForm.DisplayText($"Save location: {saveFilePath}", Color.Gray);
+                eventManager.PublishGameSaved(saveName, saveFilePath, true);
                 HasUnsavedChanges = false;
             }
             catch (Exception ex)
             {
-                gameForm.DisplayText($"Failed to save game: {ex.Message}", Color.Red);
+                eventManager.PublishGameSaved(saveName ?? "unknown", "", false, ex.Message);
             }
         }
 
@@ -1287,7 +1307,7 @@ namespace WinFormsApp1
                 string saveDirectory = GetSaveDirectory();
                 if (!Directory.Exists(saveDirectory))
                 {
-                    DisplayMessage("No saved games found.", Color.Red);
+                    eventManager.PublishGameLoaded(saveName ?? "unknown", "", false, null, "No saved games found.");
                     return;
                 }
 
@@ -1297,7 +1317,7 @@ namespace WinFormsApp1
 
                 if (saveFiles.Length == 0)
                 {
-                    DisplayMessage("No saved games found.", Color.Red);
+                    eventManager.PublishGameLoaded(saveName ?? "unknown", "", false, null, "No saved games found.");
                     return;
                 }
 
@@ -1312,7 +1332,7 @@ namespace WinFormsApp1
                 string filePath = GetSaveFilePath(saveName);
                 if (!File.Exists(filePath))
                 {
-                    DisplayMessage($"Save file '{saveName}' not found.", Color.Red);
+                    eventManager.PublishGameLoaded(saveName, filePath, false, null, $"Save file '{saveName}' not found.");
                     return;
                 }
 
@@ -1326,14 +1346,14 @@ namespace WinFormsApp1
                 // Enable game controls now that we have a loaded player
                 gameForm.EnableGameControls(true);
                 
-                DisplayMessage($"Game loaded successfully! Welcome back, {player.Name}.", Color.Green);
+                eventManager.PublishGameLoaded(saveName, filePath, true, player);
                 ShowLocation();
                 UpdateCharacterDisplay();
                 HasUnsavedChanges = false;
             }
             catch (Exception ex)
             {
-                DisplayMessage($"Error loading game: {ex.Message}", Color.Red);
+                eventManager.PublishGameLoaded(saveName ?? "unknown", "", false, null, ex.Message);
             }
         }
 
@@ -1412,23 +1432,12 @@ namespace WinFormsApp1
 
         private void UpdateStatusBar()
         {
-            gameForm.UpdateStatus($"Health: {player.Health}/{player.MaxHealth} | Level: {player.Level} | Gold: {player.Gold}");
-        }
-
-        // Public methods for UI integration
-        public Player GetPlayer()
-        {
-            return player;
-        }
-
-        public Dictionary<string, Location> GetLocations()
-        {
-            return locations;
-        }
-
-        public string GetCurrentLocationKey()
-        {
-            return currentLocation?.Key ?? GameConstants.DEFAULT_LOCATION;
+            // Update status through the UI form directly since we have a reference
+            if (gameForm != null && player != null)
+            {
+                string statusText = $"Health: {player.Health}/{player.MaxHealth} | Level: {player.Level} | Gold: {player.Gold}";
+                gameForm.UpdateStatus(statusText);
+            }
         }
 
         public void ListSaveFiles()
@@ -1443,9 +1452,9 @@ namespace WinFormsApp1
 
                 if (saveFiles.Any())
                 {
-                    gameForm.DisplayText("=== Available Save Files ===", Color.Cyan);
-                    gameForm.DisplayText($"Save directory: {saveDir}", Color.Gray);
-                    gameForm.DisplayText("");
+                    eventManager.PublishMessage("=== Available Save Files ===", Color.Cyan, MessageType.System);
+                    eventManager.PublishMessage($"Save directory: {saveDir}", Color.Gray, MessageType.System);
+                    eventManager.PublishMessage("", null, MessageType.Normal);
 
                     foreach (var saveFile in saveFiles)
                     {
@@ -1453,23 +1462,23 @@ namespace WinFormsApp1
                         var lastModified = File.GetLastWriteTime(filePath);
                         var fileSize = new FileInfo(filePath).Length;
                         
-                        gameForm.DisplayText($"• {saveFile}", Color.Yellow);
-                        gameForm.DisplayText($"  Modified: {lastModified:yyyy-MM-dd HH:mm:ss}");
-                        gameForm.DisplayText($"  Size: {fileSize:N0} bytes");
-                        gameForm.DisplayText("");
+                        eventManager.PublishMessage($"• {saveFile}", Color.Yellow, MessageType.System);
+                        eventManager.PublishMessage($"  Modified: {lastModified:yyyy-MM-dd HH:mm:ss}", null, MessageType.System);
+                        eventManager.PublishMessage($"  Size: {fileSize:N0} bytes", null, MessageType.System);
+                        eventManager.PublishMessage("", null, MessageType.Normal);
                     }
                     
-                    gameForm.DisplayText("Use 'load [filename]' to load a specific save.", Color.Cyan);
+                    eventManager.PublishMessage("Use 'load [filename]' to load a specific save.", Color.Cyan, MessageType.System);
                 }
                 else
                 {
-                    gameForm.DisplayText("No save files found.", Color.Yellow);
-                    gameForm.DisplayText($"Save directory: {saveDir}", Color.Gray);
+                    eventManager.PublishMessage("No save files found.", Color.Yellow, MessageType.System);
+                    eventManager.PublishMessage($"Save directory: {saveDir}", Color.Gray, MessageType.System);
                 }
             }
             catch (Exception ex)
             {
-                gameForm.DisplayText($"Failed to list save files: {ex.Message}", Color.Red);
+                eventManager.PublishMessage($"Failed to list save files: {ex.Message}", Color.Red, MessageType.Error);
             }
         }
 
@@ -1477,7 +1486,7 @@ namespace WinFormsApp1
         {
             if (player == null)
             {
-                gameForm.DisplayText("Start a new game first!", Color.Red);
+                eventManager.PublishMessage("Start a new game first!", Color.Red, MessageType.Error);
                 return;
             }
 
@@ -1488,7 +1497,7 @@ namespace WinFormsApp1
             }
             catch (Exception ex)
             {
-                gameForm.DisplayText($"Error opening skill tree: {ex.Message}", Color.Red);
+                eventManager.PublishMessage($"Error opening skill tree: {ex.Message}", Color.Red, MessageType.Error);
             }
         }
 
@@ -1501,7 +1510,7 @@ namespace WinFormsApp1
         public void DisplayMessage(string message, Color? color = null)
         {
             // Allow other forms to display messages in the main game window
-            gameForm.DisplayText(message, color);
+            eventManager.PublishMessage(message, color, MessageType.Normal);
         }
 
         // Override gold spending for infinite gold
@@ -1509,18 +1518,19 @@ namespace WinFormsApp1
         {
             if (infiniteGoldEnabled)
             {
-                DisplayMessage($"Infinite gold enabled - no cost!", Color.Gold);
+                eventManager.PublishMessage($"Infinite gold enabled - no cost!", Color.Gold, MessageType.Cheat);
                 return;
             }
 
             if (player.Gold >= amount)
             {
                 player.Gold -= amount;
+                eventManager.PublishGoldChange(player, -amount, "purchase");
                 UpdateCharacterDisplay();
             }
             else
             {
-                DisplayMessage(GameConstants.NOT_ENOUGH_GOLD_MSG, Color.Red);
+                eventManager.PublishMessage(GameConstants.NOT_ENOUGH_GOLD_MSG, Color.Red, MessageType.Error);
             }
         }
     }

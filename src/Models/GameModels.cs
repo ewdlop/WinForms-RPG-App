@@ -1,86 +1,73 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using WinFormsApp1.Constants;
 
 namespace WinFormsApp1
 {
+    public enum ItemType
+    {
+        Weapon,
+        Armor,
+        Potion,
+        Misc,
+        Key
+    }
+
+    public enum CharacterClass
+    {
+        Warrior,
+        Mage,
+        Rogue,
+        Archer
+    }
+
     public class Player
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         public CharacterClass CharacterClass { get; set; }
         public int Level { get; set; } = 1;
-        public int Health { get; set; }
-        public int MaxHealth { get; set; }
-        public int Attack { get; set; }
-        public int Defense { get; set; }
+        public int Health { get; set; } = 100;
+        public int MaxHealth { get; set; } = 100;
+        public int Attack { get; set; } = 10;
+        public int Defense { get; set; } = 5;
         public int Experience { get; set; } = 0;
         public int ExperienceToNextLevel { get; set; } = 100;
         public int Gold { get; set; } = 50;
+        public int SkillPoints { get; set; } = 0;
         public List<Item> Inventory { get; set; } = new List<Item>();
+        public Dictionary<string, int> Skills { get; set; } = new Dictionary<string, int>();
         public Item? EquippedWeapon { get; set; }
         public Item? EquippedArmor { get; set; }
-        public int SkillPoints { get; set; } = 10; // Starting skill points
         public List<string> LearnedSkills { get; set; } = new List<string>();
 
         public Player()
         {
+            // Initialize with starting items based on class
+            InitializeStartingItems();
         }
 
-        public Player(string name, CharacterClass characterClass) : this()
+        private void InitializeStartingItems()
         {
-            Name = name;
-            CharacterClass = characterClass;
-            
-            // Set base stats based on class
-            switch (characterClass)
-            {
-                case CharacterClass.Warrior:
-                    MaxHealth = 100;
-                    Attack = 15;
-                    Defense = 8;
-                    break;
-                case CharacterClass.Mage:
-                    MaxHealth = 70;
-                    Attack = 20;
-                    Defense = 5;
-                    break;
-                case CharacterClass.Rogue:
-                    MaxHealth = 80;
-                    Attack = 18;
-                    Defense = 6;
-                    break;
-                case CharacterClass.Cleric:
-                    MaxHealth = 90;
-                    Attack = 12;
-                    Defense = 10;
-                    break;
-            }
-            
-            Health = MaxHealth;
+            // Add a basic health potion to start
+            Inventory.Add(new Item("Health Potion", "Restores 20 health", ItemType.Potion, 20));
+        }
 
-            // Starting items based on class
-            switch (characterClass)
+        public void AddSkillPoint(string skillName)
+        {
+            if (Skills.ContainsKey(skillName))
             {
-                case CharacterClass.Warrior:
-                    Inventory.Add(new Item(GameConstants.IRON_SWORD, "A sturdy iron blade", ItemType.Weapon, 10));
-                    Inventory.Add(new Item(GameConstants.LEATHER_ARMOR, "Basic protection", ItemType.Armor, 5));
-                    break;
-                case CharacterClass.Mage:
-                    Inventory.Add(new Item(GameConstants.MAGIC_STAFF, "A staff imbued with magical energy", ItemType.Weapon, 8));
-                    Inventory.Add(new Item(GameConstants.MANA_POTION, "Restores magical energy", ItemType.Potion, 15));
-                    break;
-                case CharacterClass.Rogue:
-                    Inventory.Add(new Item(GameConstants.STEEL_DAGGER, "A sharp, lightweight blade", ItemType.Weapon, 7));
-                    Inventory.Add(new Item(GameConstants.LOCKPICKS, "Tools for opening locked doors", ItemType.Misc, 0));
-                    break;
-                case CharacterClass.Cleric:
-                    Inventory.Add(new Item(GameConstants.HOLY_MACE, "A blessed weapon", ItemType.Weapon, 9));
-                    Inventory.Add(new Item(GameConstants.HEALING_POTION, "Restores 30 health", ItemType.Potion, 30));
-                    break;
+                Skills[skillName]++;
             }
+            else
+            {
+                Skills[skillName] = 1;
+            }
+        }
 
-            // Everyone starts with a basic health potion
-            Inventory.Add(new Item(GameConstants.HEALTH_POTION, "Restores 20 health", ItemType.Potion, 20));
+        public int GetSkillLevel(string skillName)
+        {
+            return Skills.ContainsKey(skillName) ? Skills[skillName] : 0;
         }
 
         public int GetTotalAttack()
@@ -102,122 +89,133 @@ namespace WinFormsApp1
 
     public class Enemy
     {
-        public string Name { get; set; }
-        public int Level { get; set; }
-        public int Health { get; set; }
-        public int MaxHealth { get; set; }
-        public int Attack { get; set; }
-        public int Defense { get; set; }
-        public int Experience { get; set; } // Experience reward when defeated
-        public int Gold { get; set; } // Gold reward when defeated
-        public List<Item> LootTable { get; set; }
-
-        public Enemy()
-        {
-            LootTable = new List<Item>();
-        }
-
-        public Enemy(string name, int level, int health, int attack, int defense) : this()
-        {
-            Name = name;
-            Level = level;
-            Health = health;
-            MaxHealth = health;
-            Attack = attack;
-            Defense = defense;
-            // Set default rewards based on level
-            Experience = level * 15;
-            Gold = level * 10;
-        }
+        public string Name { get; set; } = "";
+        public int Level { get; set; } = 1;
+        public int Health { get; set; } = 50;
+        public int MaxHealth { get; set; } = 50;
+        public int Attack { get; set; } = 8;
+        public int Defense { get; set; } = 2;
+        public int Experience { get; set; } = 25;
+        public int Gold { get; set; } = 10;
+        public List<Item> LootTable { get; set; } = new List<Item>();
+        public string Description { get; set; } = "";
     }
 
     public class Item
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
         public ItemType Type { get; set; }
-        public int Value { get; set; }
-        public int Price { get; set; }
-        public bool IsStackable { get; set; }
+        public int Value { get; set; } = 0;
+        public int Price { get; set; } = 0;
+        public bool IsStackable { get; set; } = false;
+        public int Quantity { get; set; } = 1;
 
-        public Item()
-        {
-        }
+        public Item() { }
 
-        public Item(string name, string description, ItemType type, int value, int price = 0, bool isStackable = false)
+        public Item(string name, string description, ItemType type, int value = 0, int price = 0)
         {
             Name = name;
             Description = description;
             Type = type;
             Value = value;
             Price = price;
-            IsStackable = isStackable;
         }
     }
 
     public class Location
     {
-        public string Key { get; set; } // Location identifier/key
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public Dictionary<string, string> Exits { get; set; }
-        public List<Item> Items { get; set; }
-        public List<Enemy> Enemies { get; set; }
-        public List<string> NPCs { get; set; }
-        public bool IsVisited { get; set; }
-
-        public Location()
-        {
-            Exits = new Dictionary<string, string>();
-            Items = new List<Item>();
-            Enemies = new List<Enemy>();
-            NPCs = new List<string>();
-        }
+        public string Key { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public Dictionary<string, string> Exits { get; set; } = new Dictionary<string, string>();
+        public List<Item> Items { get; set; } = new List<Item>();
+        public List<Enemy> Enemies { get; set; } = new List<Enemy>();
+        public List<string> NPCs { get; set; } = new List<string>();
+        public bool IsVisited { get; set; } = false;
     }
 
-    public class Quest
+    public class Skill
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public QuestStatus Status { get; set; }
-        public List<QuestObjective> Objectives { get; set; }
-        public List<Item> Rewards { get; set; }
-        public int ExperienceReward { get; set; }
-        public int GoldReward { get; set; }
-
-        public Quest()
-        {
-            Objectives = new List<QuestObjective>();
-            Rewards = new List<Item>();
-            Status = QuestStatus.NotStarted;
-        }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int MaxLevel { get; set; } = 5;
+        public int Cost { get; set; } = 1;
+        public List<string> Prerequisites { get; set; } = new List<string>();
+        public SkillType Type { get; set; }
     }
 
-    public class QuestObjective
+    public enum SkillType
     {
-        public string Description { get; set; }
-        public bool IsCompleted { get; set; }
-        public string TargetType { get; set; } // "kill", "collect", "visit", etc.
-        public string Target { get; set; }
-        public int RequiredAmount { get; set; }
-        public int CurrentAmount { get; set; }
+        Combat,
+        Magic,
+        Utility,
+        Passive
     }
 
     public class GameSave
     {
-        public Player Player { get; set; }
-        public string CurrentLocationKey { get; set; }
-        public Dictionary<string, Location> Locations { get; set; }
-        public List<Quest> ActiveQuests { get; set; }
-        public DateTime SaveDate { get; set; }
-        public string SaveVersion { get; set; }
+        public Player Player { get; set; } = new Player();
+        public string CurrentLocationKey { get; set; } = "";
+        public Dictionary<string, Location> Locations { get; set; } = new Dictionary<string, Location>();
+        public List<Quest> ActiveQuests { get; set; } = new List<Quest>();
+        public DateTime SaveDate { get; set; } = DateTime.Now;
+        public string SaveVersion { get; set; } = "1.0";
+    }
 
-        public GameSave()
-        {
-            ActiveQuests = new List<Quest>();
-            SaveVersion = "1.0";
-        }
+    public class CharacterClassInfo
+    {
+        public CharacterClass Class { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int StartingHealth { get; set; } = 100;
+        public int StartingAttack { get; set; } = 10;
+        public int StartingDefense { get; set; } = 5;
+        public List<Item> StartingItems { get; set; } = new List<Item>();
+        public List<string> StartingSkills { get; set; } = new List<string>();
+    }
+
+    public class Quest
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool IsCompleted { get; set; } = false;
+        public bool IsActive { get; set; } = false;
+        public List<QuestObjective> Objectives { get; set; } = new List<QuestObjective>();
+        public QuestReward Reward { get; set; } = new QuestReward();
+    }
+
+    public class QuestObjective
+    {
+        public string Description { get; set; } = "";
+        public bool IsCompleted { get; set; } = false;
+        public string Type { get; set; } = ""; // kill, collect, visit, etc.
+        public string Target { get; set; } = "";
+        public int RequiredAmount { get; set; } = 1;
+        public int CurrentAmount { get; set; } = 0;
+    }
+
+    public class QuestReward
+    {
+        public int Experience { get; set; } = 0;
+        public int Gold { get; set; } = 0;
+        public List<Item> Items { get; set; } = new List<Item>();
+    }
+
+    public class GameStats
+    {
+        public int TotalPlayTime { get; set; } = 0; // in seconds
+        public int EnemiesDefeated { get; set; } = 0;
+        public int ItemsCollected { get; set; } = 0;
+        public int LocationsVisited { get; set; } = 0;
+        public int QuestsCompleted { get; set; } = 0;
+        public int TimesLeveledUp { get; set; } = 0;
+        public int GoldEarned { get; set; } = 0;
+        public int DamageTaken { get; set; } = 0;
+        public int DamageDealt { get; set; } = 0;
+        public DateTime FirstPlayed { get; set; } = DateTime.Now;
+        public DateTime LastPlayed { get; set; } = DateTime.Now;
     }
 
     public class NPC
@@ -238,32 +236,6 @@ namespace WinFormsApp1
     }
 
     // Enums
-    public enum CharacterClass
-    {
-        Warrior,
-        Mage,
-        Rogue,
-        Cleric
-    }
-
-    public enum ItemType
-    {
-        Weapon,
-        Armor,
-        Potion,
-        Misc,
-        Key,
-        Quest
-    }
-
-    public enum QuestStatus
-    {
-        NotStarted,
-        InProgress,
-        Completed,
-        Failed
-    }
-
     public enum NPCType
     {
         Merchant,

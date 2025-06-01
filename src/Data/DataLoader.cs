@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using WinFormsApp1.Constants;
 
@@ -5,233 +8,381 @@ namespace WinFormsApp1
 {
     public class DataLoader
     {
-        private readonly string dataPath;
-        private Dictionary<string, ItemInfo> itemDatabase = new();
-        private Dictionary<string, EnemyInfo> enemyDatabase = new();
-        private Dictionary<string, CharacterClassInfo> classDatabase = new();
+        private readonly string dataDirectory;
 
-        public DataLoader(string dataPath = null)
+        public DataLoader(string dataDirectory = "Data")
         {
-            this.dataPath = dataPath ?? GameConstants.DATA_PATH;
+            this.dataDirectory = dataDirectory;
         }
 
         public void LoadAllData()
         {
-            LoadItems();
-            LoadEnemies();
-            LoadCharacterClasses();
-        }
-
-        private void LoadItems()
-        {
-            try
+            // Ensure data directory exists
+            if (!Directory.Exists(dataDirectory))
             {
-                string itemsJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.ITEMS_JSON));
-                var itemData = JsonSerializer.Deserialize<ItemData>(itemsJson);
-                
-                if (itemData?.Items != null)
-                {
-                    itemDatabase = itemData.Items.ToDictionary(item => item.Id, item => item);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to load items data: {ex.Message}");
-            }
-        }
-
-        private void LoadEnemies()
-        {
-            try
-            {
-                string enemiesJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.ENEMIES_JSON));
-                var enemyData = JsonSerializer.Deserialize<EnemyData>(enemiesJson);
-                
-                if (enemyData?.Enemies != null)
-                {
-                    enemyDatabase = enemyData.Enemies.ToDictionary(enemy => enemy.Id, enemy => enemy);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to load enemies data: {ex.Message}");
-            }
-        }
-
-        private void LoadCharacterClasses()
-        {
-            try
-            {
-                string classesJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.CHARACTER_CLASSES_JSON));
-                var classData = JsonSerializer.Deserialize<CharacterClassData>(classesJson);
-                
-                if (classData?.CharacterClasses != null)
-                {
-                    classDatabase = classData.CharacterClasses.ToDictionary(cls => cls.Name, cls => cls);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to load character classes data: {ex.Message}");
+                Directory.CreateDirectory(dataDirectory);
+                CreateDefaultDataFiles();
             }
         }
 
         public Dictionary<string, Location> LoadLocations()
         {
+            var locations = new Dictionary<string, Location>();
+
             try
             {
-                string locationsJson = File.ReadAllText(Path.Combine(dataPath, GameConstants.LOCATIONS_JSON));
-                var locationData = JsonSerializer.Deserialize<LocationData>(locationsJson);
-                
-                if (locationData?.Locations == null)
-                    throw new Exception("No location data found");
-
-                var locations = new Dictionary<string, Location>();
-                
-                foreach (var locationInfo in locationData.Locations)
+                string filePath = Path.Combine(dataDirectory, "Locations.json");
+                if (File.Exists(filePath))
                 {
-                    var location = new Location
-                    {
-                        Key = locationInfo.Id,
-                        Name = locationInfo.Name,
-                        Description = locationInfo.Description,
-                        Exits = locationInfo.Exits.ToDictionary(
-                            exit => exit.Direction, 
-                            exit => exit.LocationId
-                        ),
-                        Items = locationInfo.Items.Select(CreateItemFromId).Where(item => item != null).ToList()!,
-                        Enemies = locationInfo.Enemies.Select(CreateEnemyFromId).Where(enemy => enemy != null).ToList()!,
-                        NPCs = locationInfo.NPCs
-                    };
+                    string jsonData = File.ReadAllText(filePath);
+                    var locationList = JsonSerializer.Deserialize<List<Location>>(jsonData);
                     
-                    locations[locationInfo.Id] = location;
+                    if (locationList != null)
+                    {
+                        foreach (var location in locationList)
+                        {
+                            locations[location.Key] = location;
+                        }
+                    }
                 }
-                
-                return locations;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new Exception($"Failed to load locations data: {ex.Message}");
+                // Fall back to default locations if loading fails
             }
+
+            // If no locations loaded, create default ones
+            if (locations.Count == 0)
+            {
+                locations = CreateDefaultLocations();
+            }
+
+            return locations;
         }
 
-        public Item? CreateItemFromId(string itemId)
+        public List<Enemy> LoadEnemies()
         {
-            if (!itemDatabase.TryGetValue(itemId, out var itemInfo))
-                return null;
+            try
+            {
+                string filePath = Path.Combine(dataDirectory, "Enemies.json");
+                if (File.Exists(filePath))
+                {
+                    string jsonData = File.ReadAllText(filePath);
+                    var enemies = JsonSerializer.Deserialize<List<Enemy>>(jsonData);
+                    return enemies ?? CreateDefaultEnemies();
+                }
+            }
+            catch (Exception)
+            {
+                // Fall back to default enemies if loading fails
+            }
 
-            return new Item(
-                itemInfo.Name,
-                itemInfo.Description,
-                ParseItemType(itemInfo.Type),
-                itemInfo.Value,
-                itemInfo.Price,
-                itemInfo.IsStackable
-            );
+            return CreateDefaultEnemies();
         }
 
-        public Enemy? CreateEnemyFromId(string enemyId)
+        public List<Item> LoadItems()
         {
-            if (!enemyDatabase.TryGetValue(enemyId, out var enemyInfo))
-                return null;
+            try
+            {
+                string filePath = Path.Combine(dataDirectory, "Items.json");
+                if (File.Exists(filePath))
+                {
+                    string jsonData = File.ReadAllText(filePath);
+                    var items = JsonSerializer.Deserialize<List<Item>>(jsonData);
+                    return items ?? CreateDefaultItems();
+                }
+            }
+            catch (Exception)
+            {
+                // Fall back to default items if loading fails
+            }
 
-            var enemy = new Enemy(
-                enemyInfo.Name,
-                enemyInfo.Level,
-                enemyInfo.Health,
-                enemyInfo.Attack,
-                enemyInfo.Defense
-            );
+            return CreateDefaultItems();
+        }
 
-            // Set experience and gold from JSON data
-            enemy.Experience = enemyInfo.ExperienceReward;
+        public List<CharacterClassInfo> LoadCharacterClasses()
+        {
+            try
+            {
+                string filePath = Path.Combine(dataDirectory, "CharacterClasses.json");
+                if (File.Exists(filePath))
+                {
+                    string jsonData = File.ReadAllText(filePath);
+                    var classes = JsonSerializer.Deserialize<List<CharacterClassInfo>>(jsonData);
+                    return classes ?? CreateDefaultCharacterClasses();
+                }
+            }
+            catch (Exception)
+            {
+                // Fall back to default classes if loading fails
+            }
+
+            return CreateDefaultCharacterClasses();
+        }
+
+        private void CreateDefaultDataFiles()
+        {
+            // Create default data files
+            CreateDefaultLocationsFile();
+            CreateDefaultEnemiesFile();
+            CreateDefaultItemsFile();
+            CreateDefaultCharacterClassesFile();
+        }
+
+        private void CreateDefaultLocationsFile()
+        {
+            var locations = CreateDefaultLocationsList();
+            string filePath = Path.Combine(dataDirectory, "Locations.json");
+            string jsonData = JsonSerializer.Serialize(locations, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, jsonData);
+        }
+
+        private void CreateDefaultEnemiesFile()
+        {
+            var enemies = CreateDefaultEnemies();
+            string filePath = Path.Combine(dataDirectory, "Enemies.json");
+            string jsonData = JsonSerializer.Serialize(enemies, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, jsonData);
+        }
+
+        private void CreateDefaultItemsFile()
+        {
+            var items = CreateDefaultItems();
+            string filePath = Path.Combine(dataDirectory, "Items.json");
+            string jsonData = JsonSerializer.Serialize(items, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, jsonData);
+        }
+
+        private void CreateDefaultCharacterClassesFile()
+        {
+            var classes = CreateDefaultCharacterClasses();
+            string filePath = Path.Combine(dataDirectory, "CharacterClasses.json");
+            string jsonData = JsonSerializer.Serialize(classes, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, jsonData);
+        }
+
+        private Dictionary<string, Location> CreateDefaultLocations()
+        {
+            var locations = new Dictionary<string, Location>();
+            var locationList = CreateDefaultLocationsList();
             
-            // Calculate gold reward (use random value between min and max)
-            var random = new Random();
-            enemy.Gold = random.Next(enemyInfo.GoldReward.Min, enemyInfo.GoldReward.Max + 1);
-
-            // Add loot table
-            foreach (var lootItem in enemyInfo.LootTable)
+            foreach (var location in locationList)
             {
-                var item = CreateItemFromId(lootItem.ItemId);
-                if (item != null)
+                locations[location.Key] = location;
+            }
+            
+            return locations;
+        }
+
+        private List<Location> CreateDefaultLocationsList()
+        {
+            return new List<Location>
+            {
+                new Location
                 {
-                    enemy.LootTable.Add(item);
-                }
-            }
-
-            return enemy;
-        }
-
-        public Player CreatePlayerFromClass(string name, string className)
-        {
-            if (!classDatabase.TryGetValue(className, out var classInfo))
-            {
-                // Fallback to Warrior if class not found
-                classInfo = classDatabase.Values.FirstOrDefault() ?? throw new Exception("No character classes available");
-            }
-
-            var characterClass = ParseCharacterClass(className);
-            var player = new Player(name, characterClass);
-
-            // Override stats with JSON data
-            player.MaxHealth = classInfo.BaseStats.MaxHealth;
-            player.Health = classInfo.BaseStats.MaxHealth;
-            player.Attack = classInfo.BaseStats.Attack;
-            player.Defense = classInfo.BaseStats.Defense;
-
-            // Clear default inventory and add items from JSON
-            player.Inventory.Clear();
-            foreach (var itemId in classInfo.StartingItems)
-            {
-                var item = CreateItemFromId(itemId);
-                if (item != null)
+                    Key = GameConstants.VILLAGE_LOCATION,
+                    Name = "Village of Elderbrook",
+                    Description = "A peaceful village with cobblestone streets and thatched-roof houses. The village square bustles with merchants and travelers.",
+                    Exits = new Dictionary<string, string>
+                    {
+                        ["north"] = GameConstants.FOREST_LOCATION,
+                        ["east"] = GameConstants.PLAINS_LOCATION
+                    },
+                    Items = new List<Item>
+                    {
+                        new Item(GameConstants.HEALTH_POTION, "Restores 20 health", ItemType.Potion, 20, 15)
+                    },
+                    Enemies = new List<Enemy>()
+                },
+                new Location
                 {
-                    player.Inventory.Add(item);
+                    Key = GameConstants.FOREST_LOCATION,
+                    Name = "Whispering Woods",
+                    Description = "A dense forest with towering trees that block out most sunlight. Strange sounds echo from the depths.",
+                    Exits = new Dictionary<string, string>
+                    {
+                        ["south"] = GameConstants.VILLAGE_LOCATION,
+                        ["west"] = GameConstants.CAVE_LOCATION
+                    },
+                    Items = new List<Item>
+                    {
+                        new Item("Wooden Staff", "A simple wooden staff", ItemType.Weapon, 5, 10)
+                    },
+                    Enemies = new List<Enemy>
+                    {
+                        new Enemy { Name = "Forest Goblin", Level = 1, Health = 25, MaxHealth = 25, Attack = 6, Defense = 1, Experience = 15, Gold = 8 }
+                    }
+                },
+                new Location
+                {
+                    Key = GameConstants.PLAINS_LOCATION,
+                    Name = "Golden Plains",
+                    Description = "Vast grasslands stretch as far as the eye can see. The wind carries the scent of wildflowers.",
+                    Exits = new Dictionary<string, string>
+                    {
+                        ["west"] = GameConstants.VILLAGE_LOCATION,
+                        ["north"] = GameConstants.RUINS_LOCATION
+                    },
+                    Items = new List<Item>(),
+                    Enemies = new List<Enemy>
+                    {
+                        new Enemy { Name = "Wild Wolf", Level = 2, Health = 35, MaxHealth = 35, Attack = 8, Defense = 2, Experience = 20, Gold = 5 }
+                    }
+                },
+                new Location
+                {
+                    Key = GameConstants.CAVE_LOCATION,
+                    Name = "Crystal Caverns",
+                    Description = "A mysterious cave system filled with glowing crystals. The air hums with magical energy.",
+                    Exits = new Dictionary<string, string>
+                    {
+                        ["east"] = GameConstants.FOREST_LOCATION,
+                        ["north"] = GameConstants.LAIR_LOCATION
+                    },
+                    Items = new List<Item>
+                    {
+                        new Item("Crystal Shard", "A glowing crystal fragment", ItemType.Misc, 0, 25)
+                    },
+                    Enemies = new List<Enemy>
+                    {
+                        new Enemy { Name = "Cave Troll", Level = 3, Health = 60, MaxHealth = 60, Attack = 12, Defense = 4, Experience = 35, Gold = 20 }
+                    }
+                },
+                new Location
+                {
+                    Key = GameConstants.RUINS_LOCATION,
+                    Name = "Ancient Ruins",
+                    Description = "The crumbling remains of an ancient civilization. Mysterious runes cover the weathered stones.",
+                    Exits = new Dictionary<string, string>
+                    {
+                        ["south"] = GameConstants.PLAINS_LOCATION
+                    },
+                    Items = new List<Item>
+                    {
+                        new Item("Ancient Scroll", "A scroll with mysterious writing", ItemType.Misc, 0, 50)
+                    },
+                    Enemies = new List<Enemy>
+                    {
+                        new Enemy { Name = "Skeleton Warrior", Level = 4, Health = 45, MaxHealth = 45, Attack = 10, Defense = 3, Experience = 30, Gold = 15 }
+                    }
+                },
+                new Location
+                {
+                    Key = GameConstants.LAIR_LOCATION,
+                    Name = "Dragon's Lair",
+                    Description = "A massive cavern filled with treasure and the overwhelming presence of an ancient dragon.",
+                    Exits = new Dictionary<string, string>
+                    {
+                        ["south"] = GameConstants.CAVE_LOCATION
+                    },
+                    Items = new List<Item>
+                    {
+                        new Item("Dragon Scale", "A shimmering dragon scale", ItemType.Misc, 0, 100)
+                    },
+                    Enemies = new List<Enemy>
+                    {
+                        new Enemy { Name = "Ancient Dragon", Level = 10, Health = 200, MaxHealth = 200, Attack = 25, Defense = 8, Experience = 150, Gold = 500 }
+                    }
                 }
-            }
-
-            return player;
-        }
-
-        public List<CharacterClassInfo> GetAvailableClasses()
-        {
-            return classDatabase.Values.ToList();
-        }
-
-        public CharacterClassInfo? GetClassInfo(string className)
-        {
-            classDatabase.TryGetValue(className, out var classInfo);
-            return classInfo;
-        }
-
-        public List<EnemyInfo> GetRandomEncounterEnemies()
-        {
-            return enemyDatabase.Values.Where(enemy => enemy.Level <= 3).ToList();
-        }
-
-        private ItemType ParseItemType(string type)
-        {
-            return type.ToLower() switch
-            {
-                GameConstants.WEAPON_TYPE => ItemType.Weapon,
-                GameConstants.ARMOR_TYPE => ItemType.Armor,
-                GameConstants.POTION_TYPE => ItemType.Potion,
-                GameConstants.KEY_TYPE => ItemType.Key,
-                GameConstants.QUEST_TYPE => ItemType.Quest,
-                _ => ItemType.Misc
             };
         }
 
-        private CharacterClass ParseCharacterClass(string className)
+        private List<Enemy> CreateDefaultEnemies()
         {
-            return className.ToLower() switch
+            return new List<Enemy>
             {
-                GameConstants.WARRIOR_CLASS => CharacterClass.Warrior,
-                GameConstants.MAGE_CLASS => CharacterClass.Mage,
-                GameConstants.ROGUE_CLASS => CharacterClass.Rogue,
-                GameConstants.CLERIC_CLASS => CharacterClass.Cleric,
-                _ => CharacterClass.Warrior
+                new Enemy { Name = "Goblin", Level = 1, Health = 25, MaxHealth = 25, Attack = 6, Defense = 1, Experience = 15, Gold = 8 },
+                new Enemy { Name = "Orc", Level = 2, Health = 40, MaxHealth = 40, Attack = 10, Defense = 3, Experience = 25, Gold = 15 },
+                new Enemy { Name = "Wolf", Level = 2, Health = 35, MaxHealth = 35, Attack = 8, Defense = 2, Experience = 20, Gold = 5 },
+                new Enemy { Name = "Bandit", Level = 3, Health = 50, MaxHealth = 50, Attack = 12, Defense = 3, Experience = 30, Gold = 25 },
+                new Enemy { Name = "Troll", Level = 4, Health = 80, MaxHealth = 80, Attack = 15, Defense = 5, Experience = 50, Gold = 40 },
+                new Enemy { Name = "Dragon", Level = 10, Health = 200, MaxHealth = 200, Attack = 25, Defense = 8, Experience = 150, Gold = 500 }
+            };
+        }
+
+        private List<Item> CreateDefaultItems()
+        {
+            return new List<Item>
+            {
+                // Potions
+                new Item(GameConstants.HEALTH_POTION, "Restores 20 health", ItemType.Potion, 20, 15),
+                new Item(GameConstants.MANA_POTION, "Restores 30 mana", ItemType.Potion, 30, 20),
+                new Item(GameConstants.HEALING_POTION, "Restores 50 health", ItemType.Potion, 50, 35),
+                
+                // Weapons
+                new Item(GameConstants.IRON_SWORD, "A sturdy iron blade", ItemType.Weapon, 10, 50),
+                new Item(GameConstants.STEEL_DAGGER, "A sharp, lightweight blade", ItemType.Weapon, 7, 30),
+                new Item(GameConstants.MAGIC_STAFF, "A staff imbued with magical energy", ItemType.Weapon, 8, 40),
+                new Item(GameConstants.HOLY_MACE, "A blessed weapon", ItemType.Weapon, 9, 45),
+                
+                // Armor
+                new Item(GameConstants.LEATHER_ARMOR, "Basic protection", ItemType.Armor, 5, 25),
+                
+                // Misc
+                new Item(GameConstants.LOCKPICKS, "Tools for opening locked doors", ItemType.Misc, 0, 10)
+            };
+        }
+
+        private List<CharacterClassInfo> CreateDefaultCharacterClasses()
+        {
+            return new List<CharacterClassInfo>
+            {
+                new CharacterClassInfo
+                {
+                    Class = CharacterClass.Warrior,
+                    Name = "Warrior",
+                    Description = "A strong melee fighter with high health and defense.",
+                    StartingHealth = 120,
+                    StartingAttack = 15,
+                    StartingDefense = 8,
+                    StartingItems = new List<Item>
+                    {
+                        new Item(GameConstants.IRON_SWORD, "A sturdy iron blade", ItemType.Weapon, 10),
+                        new Item(GameConstants.LEATHER_ARMOR, "Basic protection", ItemType.Armor, 5)
+                    }
+                },
+                new CharacterClassInfo
+                {
+                    Class = CharacterClass.Mage,
+                    Name = "Mage",
+                    Description = "A spellcaster with powerful magic but low physical defense.",
+                    StartingHealth = 80,
+                    StartingAttack = 20,
+                    StartingDefense = 3,
+                    StartingItems = new List<Item>
+                    {
+                        new Item(GameConstants.MAGIC_STAFF, "A staff imbued with magical energy", ItemType.Weapon, 8),
+                        new Item(GameConstants.MANA_POTION, "Restores magical energy", ItemType.Potion, 30)
+                    }
+                },
+                new CharacterClassInfo
+                {
+                    Class = CharacterClass.Rogue,
+                    Name = "Rogue",
+                    Description = "A nimble fighter with balanced stats and special abilities.",
+                    StartingHealth = 100,
+                    StartingAttack = 12,
+                    StartingDefense = 6,
+                    StartingItems = new List<Item>
+                    {
+                        new Item(GameConstants.STEEL_DAGGER, "A sharp, lightweight blade", ItemType.Weapon, 7),
+                        new Item(GameConstants.LOCKPICKS, "Tools for opening locked doors", ItemType.Misc, 0)
+                    }
+                },
+                new CharacterClassInfo
+                {
+                    Class = CharacterClass.Archer,
+                    Name = "Archer",
+                    Description = "A ranged fighter with high accuracy and moderate defense.",
+                    StartingHealth = 90,
+                    StartingAttack = 14,
+                    StartingDefense = 5,
+                    StartingItems = new List<Item>
+                    {
+                        new Item("Hunting Bow", "A well-crafted bow", ItemType.Weapon, 9),
+                        new Item("Arrows", "A quiver of arrows", ItemType.Misc, 0)
+                    }
+                }
             };
         }
     }
