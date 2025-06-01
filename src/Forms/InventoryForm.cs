@@ -2,13 +2,18 @@ using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using WinFormsApp1.Interfaces;
 
 namespace WinFormsApp1
 {
     public partial class InventoryForm : Form
     {
+        private readonly Player player;
+        private readonly IInventoryManager inventoryManager;
+        
+        // UI Controls
         private ListView itemListView;
-        private GroupBox detailsPanel;
+        private Panel detailsPanel;
         private Label itemNameLabel;
         private Label itemDescriptionLabel;
         private Label itemStatsLabel;
@@ -16,13 +21,11 @@ namespace WinFormsApp1
         private Button equipButton;
         private Button dropButton;
         private Button closeButton;
-        private Player player;
-        private GameEngine gameEngine;
 
-        public InventoryForm(Player player, GameEngine gameEngine)
+        public InventoryForm(Player player, IInventoryManager inventoryManager)
         {
             this.player = player;
-            this.gameEngine = gameEngine;
+            this.inventoryManager = inventoryManager;
             InitializeComponent();
             LoadInventory();
         }
@@ -98,9 +101,8 @@ namespace WinFormsApp1
 
         private void CreateDetailsPanel()
         {
-            detailsPanel = new GroupBox
+            detailsPanel = new Panel
             {
-                Text = "Item Details",
                 Dock = DockStyle.Fill,
                 Padding = new Padding(10)
             };

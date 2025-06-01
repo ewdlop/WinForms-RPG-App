@@ -1475,21 +1475,10 @@ namespace WinFormsApp1
 
         public void ShowSkillTree()
         {
-            if (player == null)
-            {
-                gameForm.DisplayText("Start a new game first!", Color.Red);
-                return;
-            }
-
-            try
-            {
-                var skillTreeForm = new SkillTreeForm(player, this);
-                skillTreeForm.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                gameForm.DisplayText($"Error opening skill tree: {ex.Message}", Color.Red);
-            }
+            // This method should be removed or updated to use the new architecture
+            // For now, show a message that this functionality has moved
+            gameForm.DisplayText("Skill tree functionality has been moved to the new UI system.", Color.Yellow);
+            gameForm.DisplayText("Use the main form's Character menu to access the skill tree.", Color.Cyan);
         }
 
         public void UpdateCharacterDisplay()

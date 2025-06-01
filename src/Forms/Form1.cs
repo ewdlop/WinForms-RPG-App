@@ -4,6 +4,9 @@ using System.Windows.Forms;
 using System.Linq;
 using System.Collections.Generic;
 using WinFormsApp1.Controls;
+using WinFormsApp1.Interfaces;
+using WinFormsApp1.Events;
+using WinFormsApp1.Managers;
 
 namespace WinFormsApp1
 {
@@ -14,7 +17,6 @@ namespace WinFormsApp1
         private GameInputControl gameInputControl;
         private MenuStrip menuStrip;
         private GameStatusBarControl gameStatusBarControl;
-        private GameEngine gameEngine;
         private ToolStrip toolStrip;
         private Panel sidePanel;
         private CharacterStatsControl characterStatsControl;
@@ -22,16 +24,81 @@ namespace WinFormsApp1
         private QuickActionsControl quickActionsControl;
         private MiniMapControl miniMapControl;
 
+        // Event-driven architecture services
+        private readonly GameServiceContainer _serviceContainer;
+        private readonly IEventManager _eventManager;
+        private readonly IGameManager _gameManager;
+        private readonly IPlayerManager _playerManager;
+        private readonly ICombatManager _combatManager;
+        private readonly IInventoryManager _inventoryManager;
+        private readonly ILocationManager _locationManager;
+        private readonly ISkillManager _skillManager;
+
         // UI elements that should be disabled until game starts
         private List<Control> gameRequiredControls;
         private List<ToolStripItem> gameRequiredMenuItems;
         private List<ToolStripItem> gameRequiredToolbarItems;
 
-        public Form1()
+        public Form1(GameServiceContainer serviceContainer)
         {
+            _serviceContainer = serviceContainer ?? throw new ArgumentNullException(nameof(serviceContainer));
+            
+            // Get services from container
+            _eventManager = _serviceContainer.GetService<IEventManager>();
+            _gameManager = _serviceContainer.GetService<IGameManager>();
+            _playerManager = _serviceContainer.GetService<IPlayerManager>();
+            _combatManager = _serviceContainer.GetService<ICombatManager>();
+            _inventoryManager = _serviceContainer.GetService<IInventoryManager>();
+            _locationManager = _serviceContainer.GetService<ILocationManager>();
+            _skillManager = _serviceContainer.GetService<ISkillManager>();
+
             InitializeComponent();
             InitializeGameUI();
-            gameEngine = new GameEngine(this);
+            SubscribeToEvents();
+        }
+
+        private void SubscribeToEvents()
+        {
+            // Subscribe to game events for UI updates
+            _eventManager.Subscribe<GameStartedEvent>(OnGameStarted);
+            _eventManager.Subscribe<GameEndedEvent>(OnGameEnded);
+            _eventManager.Subscribe<PlayerStatsChangedEvent>(OnPlayerStatsChanged);
+            _eventManager.Subscribe<PlayerLeveledUpEvent>(OnPlayerLeveledUp);
+            _eventManager.Subscribe<PlayerHealthChangedEvent>(OnPlayerHealthChanged);
+            _eventManager.Subscribe<PlayerGoldChangedEvent>(OnPlayerGoldChanged);
+            _eventManager.Subscribe<PlayerExperienceGainedEvent>(OnPlayerExperienceGained);
+            _eventManager.Subscribe<LocationChangedEvent>(OnLocationChanged);
+            _eventManager.Subscribe<CombatStartedEvent>(OnCombatStarted);
+            _eventManager.Subscribe<CombatEndedEvent>(OnCombatEnded);
+            _eventManager.Subscribe<InventoryUpdatedEvent>(OnInventoryUpdated);
+            _eventManager.Subscribe<ItemEquippedEvent>(OnItemEquipped);
+            _eventManager.Subscribe<ItemUnequippedEvent>(OnItemUnequipped);
+            _eventManager.Subscribe<SkillLearnedEvent>(OnSkillLearned);
+            _eventManager.Subscribe<SkillUsedEvent>(OnSkillUsed);
+            _eventManager.Subscribe<CommandProcessedEvent>(OnCommandProcessed);
+            _eventManager.Subscribe<GameMessageEvent>(OnGameMessage);
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            // Unsubscribe from all events
+            _eventManager.ClearSubscriptions<GameStartedEvent>();
+            _eventManager.ClearSubscriptions<GameEndedEvent>();
+            _eventManager.ClearSubscriptions<PlayerStatsChangedEvent>();
+            _eventManager.ClearSubscriptions<PlayerLeveledUpEvent>();
+            _eventManager.ClearSubscriptions<PlayerHealthChangedEvent>();
+            _eventManager.ClearSubscriptions<PlayerGoldChangedEvent>();
+            _eventManager.ClearSubscriptions<PlayerExperienceGainedEvent>();
+            _eventManager.ClearSubscriptions<LocationChangedEvent>();
+            _eventManager.ClearSubscriptions<CombatStartedEvent>();
+            _eventManager.ClearSubscriptions<CombatEndedEvent>();
+            _eventManager.ClearSubscriptions<InventoryUpdatedEvent>();
+            _eventManager.ClearSubscriptions<ItemEquippedEvent>();
+            _eventManager.ClearSubscriptions<ItemUnequippedEvent>();
+            _eventManager.ClearSubscriptions<SkillLearnedEvent>();
+            _eventManager.ClearSubscriptions<SkillUsedEvent>();
+            _eventManager.ClearSubscriptions<CommandProcessedEvent>();
+            _eventManager.ClearSubscriptions<GameMessageEvent>();
         }
 
         private void InitializeGameUI()
@@ -140,18 +207,18 @@ namespace WinFormsApp1
 
             // Game menu
             ToolStripMenuItem gameMenu = new ToolStripMenuItem("&Game");
-            gameMenu.DropDownItems.Add("&New Game", null, (s, e) => gameEngine.StartNewGame());
+            gameMenu.DropDownItems.Add("&New Game", null, (s, e) => StartNewGame());
             gameMenu.DropDownItems.Add(new ToolStripSeparator());
-            gameMenu.DropDownItems.Add("&Save Game", null, (s, e) => gameEngine.SaveGame());
-            gameMenu.DropDownItems.Add("&Load Game", null, (s, e) => gameEngine.LoadGame());
+            gameMenu.DropDownItems.Add("&Save Game", null, (s, e) => SaveGame());
+            gameMenu.DropDownItems.Add("&Load Game", null, (s, e) => LoadGame());
             gameMenu.DropDownItems.Add(new ToolStripSeparator());
             gameMenu.DropDownItems.Add("E&xit", null, (s, e) => this.Close());
 
             // Character menu
             ToolStripMenuItem characterMenu = new ToolStripMenuItem("&Character");
             characterMenu.DropDownItems.Add("&Inventory", null, ShowInventory);
-            characterMenu.DropDownItems.Add("&Stats", null, (s, e) => gameEngine.ShowCharacterStats());
-            characterMenu.DropDownItems.Add("S&kills", null, (s, e) => gameEngine.ShowSkillTree());
+            characterMenu.DropDownItems.Add("&Stats", null, (s, e) => ShowCharacterStats());
+            characterMenu.DropDownItems.Add("S&kills", null, (s, e) => ShowSkillTree());
             characterMenu.DropDownItems.Add("&Equipment", null, ShowEquipment);
 
             // World menu
@@ -173,7 +240,7 @@ namespace WinFormsApp1
 
             // Help menu
             ToolStripMenuItem helpMenu = new ToolStripMenuItem("&Help");
-            helpMenu.DropDownItems.Add("&Commands", null, (s, e) => gameEngine.ShowHelp());
+            helpMenu.DropDownItems.Add("&Commands", null, (s, e) => ShowHelp());
             helpMenu.DropDownItems.Add("&Controls", null, ShowControlsHelp);
             helpMenu.DropDownItems.Add(new ToolStripSeparator());
             helpMenu.DropDownItems.Add("&About", null, ShowAbout);
@@ -196,35 +263,35 @@ namespace WinFormsApp1
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 ToolTipText = "Start a new game"
             };
-            newGameButton.Click += (s, e) => gameEngine.StartNewGame();
+            newGameButton.Click += (s, e) => StartNewGame();
 
             ToolStripButton saveButton = new ToolStripButton("Save")
             {
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 ToolTipText = "Save game (Ctrl+S)"
             };
-            saveButton.Click += (s, e) => gameEngine.SaveGame();
+            saveButton.Click += (s, e) => SaveGame();
 
             ToolStripButton loadButton = new ToolStripButton("Load")
             {
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 ToolTipText = "Load game (Ctrl+L)"
             };
-            loadButton.Click += (s, e) => gameEngine.LoadGame();
+            loadButton.Click += (s, e) => LoadGame();
 
             ToolStripSeparator separator1 = new ToolStripSeparator();
 
             ToolStripButton inventoryButton = new ToolStripButton("Inventory")
             {
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                ToolTipText = "Open inventory (Tab)"
+                ToolTipText = "Open inventory"
             };
             inventoryButton.Click += ShowInventory;
 
             ToolStripButton mapButton = new ToolStripButton("Map")
             {
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-                ToolTipText = "Show world map (M)"
+                ToolTipText = "Open world map"
             };
             mapButton.Click += ShowMap;
 
@@ -233,7 +300,7 @@ namespace WinFormsApp1
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 ToolTipText = "Open skill tree"
             };
-            skillsButton.Click += (s, e) => gameEngine.ShowSkillTree();
+            skillsButton.Click += (s, e) => ShowSkillTree();
 
             ToolStripSeparator separator2 = new ToolStripSeparator();
 
@@ -242,7 +309,7 @@ namespace WinFormsApp1
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 ToolTipText = "Show help (F1)"
             };
-            helpButton.Click += (s, e) => gameEngine.ShowHelp();
+            helpButton.Click += (s, e) => ShowHelp();
 
             toolStrip.Items.AddRange(new ToolStripItem[] {
                 newGameButton, saveButton, loadButton, separator1,
@@ -272,7 +339,7 @@ namespace WinFormsApp1
             {
                 Dock = DockStyle.Fill
             };
-            gameTextDisplayControl.ClearRequested += (s, e) => gameEngine?.ProcessCommand("clear");
+            gameTextDisplayControl.ClearRequested += (s, e) => _gameManager?.ProcessCommand("clear");
             gameLayout.Controls.Add(gameTextDisplayControl, 0, 0);
 
             // Input panel using custom control
@@ -282,7 +349,7 @@ namespace WinFormsApp1
             };
             gameInputControl.CommandSubmitted += GameInputControl_CommandSubmitted;
             gameInputControl.InventoryRequested += (s, e) => ShowInventory(s, e);
-            gameInputControl.HelpRequested += (s, e) => gameEngine?.ShowHelp();
+            gameInputControl.HelpRequested += (s, e) => ShowHelp();
             gameLayout.Controls.Add(gameInputControl, 0, 1);
 
             gamePanel.Controls.Add(gameLayout);
@@ -408,19 +475,19 @@ namespace WinFormsApp1
                 case Keys.S:
                     if (e.Control)
                     {
-                        gameEngine.SaveGame();
+                        SaveGame();
                         e.Handled = true;
                     }
                     break;
                 case Keys.L:
                     if (e.Control)
                     {
-                        gameEngine.LoadGame();
+                        LoadGame();
                         e.Handled = true;
                     }
                     break;
                 case Keys.F1:
-                    gameEngine.ShowHelp();
+                    ShowHelp();
                     e.Handled = true;
                     break;
             }
@@ -430,7 +497,7 @@ namespace WinFormsApp1
         private void GameInputControl_CommandSubmitted(object sender, string command)
         {
             DisplayText($"> {command}", Color.Yellow);
-            gameEngine.ProcessCommand(command);
+            _gameManager?.ProcessCommand(command);
         }
 
         private void MiniMapControl_LocationClicked(object sender, string location)
@@ -441,12 +508,12 @@ namespace WinFormsApp1
         // Event handlers for new features
         private void ShowInventory(object sender, EventArgs e)
         {
-            if (gameEngine != null)
+            if (_gameManager != null)
             {
                 // This will be implemented when we have access to the player
                 try
                 {
-                    var inventoryForm = new InventoryForm(gameEngine.GetPlayer(), gameEngine);
+                    var inventoryForm = new InventoryForm(_playerManager.CurrentPlayer, _inventoryManager);
                     inventoryForm.ShowDialog();
                 }
                 catch
@@ -458,11 +525,11 @@ namespace WinFormsApp1
 
         private void ShowMap(object sender, EventArgs e)
         {
-            if (gameEngine != null)
+            if (_gameManager != null)
             {
                 try
                 {
-                    var mapForm = new MapForm(gameEngine.GetLocations(), gameEngine.GetCurrentLocationKey(), gameEngine);
+                    var mapForm = new MapForm(_locationManager.AllLocations, _locationManager.CurrentLocation?.Key ?? "", _locationManager);
                     mapForm.ShowDialog();
                 }
                 catch
@@ -474,11 +541,11 @@ namespace WinFormsApp1
 
         private void ShowEquipment(object sender, EventArgs e)
         {
-            if (gameEngine != null)
+            if (_gameManager != null)
             {
                 try
                 {
-                    var player = gameEngine.GetPlayer();
+                    var player = _playerManager.CurrentPlayer;
                     string equipment = "=== Equipment ===\n";
                     equipment += $"Weapon: {(player.EquippedWeapon?.Name ?? "None")}\n";
                     equipment += $"Armor: {(player.EquippedArmor?.Name ?? "None")}\n\n";
@@ -624,7 +691,7 @@ namespace WinFormsApp1
             // Update progress bars and stats if we have access to player data
             try
             {
-                var player = gameEngine.GetPlayer();
+                var player = _playerManager.CurrentPlayer;
                 if (player != null)
                 {
                     // Update status bar with player stats
@@ -637,17 +704,13 @@ namespace WinFormsApp1
                     characterStatsControl?.UpdateStats(player);
 
                     // Update mini-map with current location
-                    string currentLocationKey = gameEngine.GetCurrentLocationKey();
-                    if (!string.IsNullOrEmpty(currentLocationKey))
+                    var currentLocation = _locationManager.CurrentLocation;
+                    if (currentLocation != null)
                     {
-                        miniMapControl?.UpdateCurrentLocation(currentLocationKey);
+                        miniMapControl?.UpdateCurrentLocation(currentLocation.Key);
                         
                         // Update status bar location
-                        var locations = gameEngine.GetLocations();
-                        if (locations.ContainsKey(currentLocationKey))
-                        {
-                            gameStatusBarControl?.UpdateLocation(locations[currentLocationKey].Name);
-                        }
+                        gameStatusBarControl?.UpdateLocation(currentLocation.Name);
                     }
                 }
                 else
@@ -688,17 +751,20 @@ namespace WinFormsApp1
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (gameEngine?.HasUnsavedChanges == true)
+            // Unsubscribe from events before closing
+            UnsubscribeFromEvents();
+            
+            if (_gameManager?.CurrentGameState == GameState.Running)
             {
                 var result = MessageBox.Show(
-                    "You have unsaved progress. Do you want to save before exiting?",
+                    "You have unsaved changes. Would you like to save before exiting?",
                     "Unsaved Changes",
                     MessageBoxButtons.YesNoCancel,
                     MessageBoxIcon.Question);
 
                 if (result == DialogResult.Yes)
                 {
-                    gameEngine.SaveGame();
+                    SaveGame();
                 }
                 else if (result == DialogResult.Cancel)
                 {
@@ -706,6 +772,7 @@ namespace WinFormsApp1
                     return;
                 }
             }
+
             base.OnFormClosing(e);
         }
 
@@ -724,19 +791,19 @@ namespace WinFormsApp1
             switch (action)
             {
                 case "look":
-                    gameEngine.ProcessCommand("look");
+                    _gameManager.ProcessCommand("look");
                     break;
                 case "stats":
-                    gameEngine.ShowCharacterStats();
+                    ShowCharacterStats();
                     break;
                 case "save":
-                    gameEngine.SaveGame();
+                    SaveGame();
                     break;
                 case "load":
-                    gameEngine.LoadGame();
+                    LoadGame();
                     break;
                 case "help":
-                    gameEngine.ShowHelp();
+                    ShowHelp();
                     break;
                 case "exit":
                     this.Close();
@@ -762,6 +829,430 @@ namespace WinFormsApp1
         public void ShowGoldChange(int goldChange)
         {
             gameStatusBarControl?.ShowGoldChange(goldChange);
+        }
+
+        private void OnGameStarted(GameStartedEvent e)
+        {
+            // Enable game controls when game starts
+            this.Invoke(() =>
+            {
+                SetGameControlsEnabled(true);
+                DisplayText("=== Welcome to the Realm of Aethermoor ===", Color.Green);
+                DisplayText($"Welcome, {e.Player.Name} the {e.Player.CharacterClass}!", Color.Cyan);
+                DisplayText("Your adventure begins! Type 'help' for commands or 'look' to examine your surroundings.", Color.White);
+                UpdateStatus($"Game started - Playing as {e.Player.Name}");
+                
+                // Update character display
+                characterStatsControl?.UpdateStats(e.Player);
+                progressDisplayControl?.UpdateProgress(e.Player);
+            });
+        }
+
+        private void OnGameEnded(GameEndedEvent e)
+        {
+            // Disable game controls when game ends
+            this.Invoke(() =>
+            {
+                SetGameControlsEnabled(false);
+                DisplayText("=== Game Ended ===", Color.Red);
+                DisplayText(e.Reason, Color.Yellow);
+                UpdateStatus("Game ended");
+                
+                // Clear character display
+                characterStatsControl?.ClearStats();
+                progressDisplayControl?.ClearProgress();
+            });
+        }
+
+        private void OnPlayerStatsChanged(PlayerStatsChangedEvent e)
+        {
+            // Update character stats display
+            this.Invoke(() =>
+            {
+                characterStatsControl?.UpdateStats(e.Player);
+                progressDisplayControl?.UpdateProgress(e.Player);
+                
+                // Show stat change message if significant
+                if (e.StatType != StatType.Health && e.StatType != StatType.Experience) // Don't spam for frequent changes
+                {
+                    DisplayText($"{e.StatType} changed: {e.OldValue} → {e.NewValue}", Color.Cyan);
+                }
+            });
+        }
+
+        private void OnPlayerLeveledUp(PlayerLeveledUpEvent e)
+        {
+            // Show level up celebration
+            this.Invoke(() =>
+            {
+                DisplayText("", Color.White);
+                DisplayText("*** LEVEL UP! ***", Color.Gold);
+                DisplayText($"Congratulations! You reached level {e.NewLevel}!", Color.Gold);
+                DisplayText($"You gained {e.SkillPointsGained} skill points!", Color.Magenta);
+                DisplayText("", Color.White);
+                
+                // Update displays
+                characterStatsControl?.UpdateStats(e.Player);
+                progressDisplayControl?.UpdateProgress(e.Player);
+                
+                // Show visual feedback
+                ShowLevelUp(e.OldLevel, e.NewLevel);
+            });
+        }
+
+        private void OnPlayerHealthChanged(PlayerHealthChangedEvent e)
+        {
+            // Update health display
+            this.Invoke(() =>
+            {
+                progressDisplayControl?.UpdateHealth(e.NewHealth, e.MaxHealth);
+                
+                // Show health change message for significant changes
+                int healthChange = e.NewHealth - e.OldHealth;
+                if (Math.Abs(healthChange) >= 5) // Only show for changes of 5+ health
+                {
+                    if (healthChange > 0)
+                    {
+                        DisplayText($"Health restored: +{healthChange} ({e.Reason})", Color.Green);
+                    }
+                    else
+                    {
+                        DisplayText($"Health lost: {healthChange} ({e.Reason})", Color.Red);
+                    }
+                }
+                
+                // Update status bar
+                UpdateStatus($"Health: {e.NewHealth}/{e.MaxHealth}");
+            });
+        }
+
+        private void OnPlayerGoldChanged(PlayerGoldChangedEvent e)
+        {
+            // Update gold display
+            this.Invoke(() =>
+            {
+                characterStatsControl?.UpdateStats(e.Player);
+                
+                // Show gold change message
+                int goldChange = e.NewGold - e.OldGold;
+                if (goldChange != 0)
+                {
+                    if (goldChange > 0)
+                    {
+                        DisplayText($"Gold gained: +{goldChange} ({e.Reason})", Color.Yellow);
+                        ShowGoldChange(goldChange);
+                    }
+                    else
+                    {
+                        DisplayText($"Gold spent: {goldChange} ({e.Reason})", Color.Orange);
+                    }
+                }
+            });
+        }
+
+        private void OnPlayerExperienceGained(PlayerExperienceGainedEvent e)
+        {
+            // Update experience display
+            this.Invoke(() =>
+            {
+                progressDisplayControl?.UpdateExperience(e.TotalExperience, e.Player.ExperienceToNextLevel);
+                
+                // Show experience gain message
+                if (e.ExperienceGained > 0)
+                {
+                    DisplayText($"Experience gained: +{e.ExperienceGained} ({e.Source})", Color.Cyan);
+                    ShowExperienceGain(e.ExperienceGained);
+                }
+            });
+        }
+
+        private void OnLocationChanged(LocationChangedEvent e)
+        {
+            // Update location display
+            this.Invoke(() =>
+            {
+                DisplayText("", Color.White);
+                DisplayText($"=== {e.NewLocation.Name} ===", Color.Magenta);
+                DisplayText(e.NewLocation.Description, Color.White);
+                
+                if (e.IsFirstVisit)
+                {
+                    DisplayText("(First time visiting this location!)", Color.Green);
+                }
+                
+                // Update mini-map
+                miniMapControl?.UpdateCurrentLocation(e.NewLocation.Key);
+                
+                // Update status bar
+                UpdateStatus($"Location: {e.NewLocation.Name}");
+                
+                // Show available exits
+                var exits = _locationManager.GetExitsDescription();
+                DisplayText(exits, Color.Gray);
+                
+                // Show items and NPCs if any
+                var items = _locationManager.GetLocationItems();
+                if (items.Count > 0)
+                {
+                    DisplayText($"Items here: {string.Join(", ", items.Select(i => i.Name))}", Color.Yellow);
+                }
+                
+                var npcs = _locationManager.GetLocationNPCs();
+                if (npcs.Count > 0)
+                {
+                    DisplayText($"People here: {string.Join(", ", npcs)}", Color.Cyan);
+                }
+            });
+        }
+
+        private void OnCombatStarted(CombatStartedEvent e)
+        {
+            // Update UI for combat mode
+            this.Invoke(() =>
+            {
+                DisplayText("", Color.White);
+                DisplayText("*** COMBAT STARTED ***", Color.Red);
+                DisplayText($"You are fighting: {e.Enemy.Name} (Level {e.Enemy.Level})", Color.Red);
+                DisplayText($"Enemy Health: {e.Enemy.Health}/{e.Enemy.MaxHealth}", Color.Orange);
+                DisplayText("Commands: attack, defend, flee", Color.Yellow);
+                DisplayText("", Color.White);
+                
+                SetCombatMode(true);
+                UpdateStatus($"In combat with {e.Enemy.Name}");
+            });
+        }
+
+        private void OnCombatEnded(CombatEndedEvent e)
+        {
+            // Update UI when combat ends
+            this.Invoke(() =>
+            {
+                DisplayText("", Color.White);
+                DisplayText("*** COMBAT ENDED ***", Color.Green);
+                
+                if (e.Result == CombatResult.Victory)
+                {
+                    DisplayText($"Victory! You defeated {e.Enemy.Name}!", Color.Green);
+                    if (e.ExperienceGained > 0)
+                        DisplayText($"Experience gained: +{e.ExperienceGained}", Color.Cyan);
+                    if (e.GoldGained > 0)
+                        DisplayText($"Gold gained: +{e.GoldGained}", Color.Yellow);
+                    if (e.LootGained.Count > 0)
+                        DisplayText($"Loot found: {string.Join(", ", e.LootGained.Select(i => i.Name))}", Color.Magenta);
+                }
+                else if (e.Result == CombatResult.Defeat)
+                {
+                    DisplayText($"You were defeated by {e.Enemy.Name}!", Color.Red);
+                    DisplayText("You have been defeated in combat.", Color.Orange);
+                }
+                else if (e.Result == CombatResult.Fled)
+                {
+                    DisplayText($"You successfully fled from {e.Enemy.Name}!", Color.Yellow);
+                }
+                
+                DisplayText("", Color.White);
+                
+                SetCombatMode(false);
+                UpdateStatus("Combat ended");
+            });
+        }
+
+        private void OnInventoryUpdated(InventoryUpdatedEvent e)
+        {
+            // Update inventory-related displays
+            this.Invoke(() =>
+            {
+                // Show inventory change message
+                if (e.Action == InventoryAction.ItemAdded)
+                {
+                    DisplayText($"Added to inventory: {e.AffectedItem.Name} x{e.Quantity}", Color.Green);
+                }
+                else if (e.Action == InventoryAction.ItemRemoved)
+                {
+                    DisplayText($"Removed from inventory: {e.AffectedItem.Name} x{e.Quantity}", Color.Orange);
+                }
+            });
+        }
+
+        private void OnItemEquipped(ItemEquippedEvent e)
+        {
+            // Show equipment change
+            this.Invoke(() =>
+            {
+                DisplayText($"Equipped: {e.EquippedItem.Name}", Color.Green);
+                
+                // Update character stats
+                characterStatsControl?.UpdateStats(e.Player);
+            });
+        }
+
+        private void OnItemUnequipped(ItemUnequippedEvent e)
+        {
+            // Show equipment removal
+            this.Invoke(() =>
+            {
+                DisplayText($"Unequipped: {e.UnequippedItem.Name}", Color.Orange);
+                
+                // Update character stats
+                characterStatsControl?.UpdateStats(e.Player);
+            });
+        }
+
+        private void OnSkillLearned(SkillLearnedEvent e)
+        {
+            // Show skill learning result
+            this.Invoke(() =>
+            {
+                if (e.WasSuccessful)
+                {
+                    DisplayText($"Skill learned: {e.Skill.Name}!", Color.Magenta);
+                    DisplayText($"Skill points spent: {e.SkillPointsSpent}", Color.Cyan);
+                    DisplayText($"Remaining skill points: {e.RemainingSkillPoints}", Color.Cyan);
+                }
+                else
+                {
+                    DisplayText($"Failed to learn skill: {e.FailureReason}", Color.Red);
+                }
+            });
+        }
+
+        private void OnSkillUsed(SkillUsedEvent e)
+        {
+            // Show skill usage result
+            this.Invoke(() =>
+            {
+                if (e.WasSuccessful)
+                {
+                    DisplayText($"Used skill: {e.Skill.Name}", Color.Magenta);
+                    if (e.SkillEffects.ContainsKey("description"))
+                    {
+                        DisplayText($"Effect: {e.SkillEffects["description"]}", Color.Cyan);
+                    }
+                }
+                else
+                {
+                    DisplayText($"Failed to use skill: {e.FailureReason}", Color.Red);
+                }
+            });
+        }
+
+        private void OnCommandProcessed(CommandProcessedEvent e)
+        {
+            // Show command processing result
+            this.Invoke(() =>
+            {
+                if (!e.Result.Success && !string.IsNullOrEmpty(e.Result.ErrorMessage))
+                {
+                    DisplayText($"Error: {e.Result.ErrorMessage}", Color.Red);
+                }
+                
+                // Update status if needed
+                if (!string.IsNullOrEmpty(e.Result.Message))
+                {
+                    UpdateStatus(e.Result.Message);
+                }
+            });
+        }
+
+        private void OnGameMessage(GameMessageEvent e)
+        {
+            // Display game messages
+            this.Invoke(() =>
+            {
+                Color messageColor = e.MessageType switch
+                {
+                    GameMessageType.Info => Color.White,
+                    GameMessageType.Success => Color.Green,
+                    GameMessageType.Warning => Color.Yellow,
+                    GameMessageType.Error => Color.Red,
+                    GameMessageType.Combat => Color.Orange,
+                    GameMessageType.System => Color.Cyan,
+                    _ => Color.White
+                };
+                
+                DisplayText(e.Message, messageColor);
+            });
+        }
+
+        // UI Action Methods
+        private void StartNewGame()
+        {
+            using (var characterDialog = new CharacterCreationDialog())
+            {
+                if (characterDialog.ShowDialog() == DialogResult.OK)
+                {
+                    var player = characterDialog.CreatedPlayer;
+                    _gameManager.StartNewGame(player);
+                }
+            }
+        }
+
+        private void SaveGame()
+        {
+            // For now, use save slot 1. In a full implementation, show a save slot selection dialog
+            _gameManager.SaveGame(1);
+        }
+
+        private void LoadGame()
+        {
+            // For now, use save slot 1. In a full implementation, show a load slot selection dialog
+            _gameManager.LoadGame(1);
+        }
+
+        private void ShowCharacterStats()
+        {
+            var player = _playerManager.CurrentPlayer;
+            if (player != null)
+            {
+                var statsMessage = $"=== Character Stats ===\n" +
+                                 $"Name: {player.Name}\n" +
+                                 $"Class: {player.CharacterClass}\n" +
+                                 $"Level: {player.Level}\n" +
+                                 $"Health: {player.Health}/{player.MaxHealth}\n" +
+                                 $"Attack: {player.Attack}\n" +
+                                 $"Defense: {player.Defense}\n" +
+                                 $"Experience: {player.Experience}/{player.ExperienceToNextLevel}\n" +
+                                 $"Gold: {player.Gold}\n" +
+                                 $"Skill Points: {player.SkillPoints}";
+                
+                DisplayText(statsMessage, Color.Cyan);
+            }
+            else
+            {
+                DisplayText("No character loaded.", Color.Red);
+            }
+        }
+
+        private void ShowSkillTree()
+        {
+            var player = _playerManager.CurrentPlayer;
+            if (player != null)
+            {
+                var skillTreeForm = new SkillTreeForm(player, _skillManager);
+                skillTreeForm.ShowDialog();
+            }
+            else
+            {
+                DisplayText("No character loaded.", Color.Red);
+            }
+        }
+
+        private void ShowHelp()
+        {
+            var helpText = "=== Game Commands ===\n" +
+                          "Movement: north, south, east, west, go [direction]\n" +
+                          "Actions: look, take [item], use [item], attack [enemy]\n" +
+                          "Character: stats, inventory, skills\n" +
+                          "Combat: attack, defend, flee\n" +
+                          "Game: save, load, help, quit\n" +
+                          "\n" +
+                          "=== Keyboard Shortcuts ===\n" +
+                          "Ctrl+S: Save Game\n" +
+                          "Ctrl+L: Load Game\n" +
+                          "F1: Show Help\n" +
+                          "Tab: Open Inventory";
+            
+            DisplayText(helpText, Color.Yellow);
         }
     }
 }

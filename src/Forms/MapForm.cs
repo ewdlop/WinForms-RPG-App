@@ -3,24 +3,25 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using WinFormsApp1.Interfaces;
 
 namespace WinFormsApp1
 {
     public partial class MapForm : Form
     {
+        private readonly Dictionary<string, Location> locations;
+        private readonly string currentLocationKey;
+        private readonly ILocationManager locationManager;
         private Panel mapPanel;
-        private Dictionary<string, Location> locations;
-        private string currentLocationKey;
-        private GameEngine gameEngine;
         private Dictionary<string, Rectangle> locationRects;
         private Dictionary<string, Point> locationPositions;
         private ToolTip toolTip;
 
-        public MapForm(Dictionary<string, Location> locations, string currentLocationKey, GameEngine gameEngine)
+        public MapForm(Dictionary<string, Location> locations, string currentLocationKey, ILocationManager locationManager)
         {
             this.locations = locations;
             this.currentLocationKey = currentLocationKey;
-            this.gameEngine = gameEngine;
+            this.locationManager = locationManager;
             this.locationRects = new Dictionary<string, Rectangle>();
             this.locationPositions = new Dictionary<string, Point>();
             this.toolTip = new ToolTip();

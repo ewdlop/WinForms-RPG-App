@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using WinFormsApp1.Interfaces;
+using System.Drawing;
 
 namespace WinFormsApp1.Events
 {
@@ -207,5 +208,36 @@ namespace WinFormsApp1.Events
             NewValue = newValue;
             Source = "GameManager";
         }
+    }
+
+    /// <summary>
+    /// Event published for general game messages that should be displayed to the player
+    /// </summary>
+    public class GameMessageEvent : GameEvent
+    {
+        public string Message { get; set; }
+        public GameMessageType MessageType { get; set; }
+        public Color? TextColor { get; set; }
+
+        public GameMessageEvent(string message, GameMessageType messageType = GameMessageType.Info, Color? textColor = null)
+        {
+            Message = message;
+            MessageType = messageType;
+            TextColor = textColor;
+            Source = "GameManager";
+        }
+    }
+
+    /// <summary>
+    /// Types of game messages for different display styles
+    /// </summary>
+    public enum GameMessageType
+    {
+        Info,
+        Success,
+        Warning,
+        Error,
+        Combat,
+        System
     }
 } 
