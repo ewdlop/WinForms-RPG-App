@@ -158,6 +158,20 @@ WinFormsApp1/
 │   │   └── JsonAssetEditorControl.cs   # JSON editor control | JSON编辑器控件
 │   ├── Game/                     # Game logic | 游戏逻辑
 │   │   └── GameEngine.cs        # Core game engine | 核心游戏引擎
+│   ├── Managers/                 # Business logic managers (V3.0) | 业务逻辑管理器 (V3.0)
+│   │   ├── EventManager.cs      # Central event bus | 中央事件总线
+│   │   ├── GameManager.cs       # Game state management | 游戏状态管理
+│   │   ├── PlayerManager.cs     # Player progression | 玩家进度
+│   │   ├── CombatManager.cs     # Combat system | 战斗系统
+│   │   ├── InventoryManager.cs  # Inventory operations | 背包操作
+│   │   ├── LocationManager.cs   # World navigation | 世界导航
+│   │   ├── SkillManager.cs      # Skill tree logic | 技能树逻辑
+│   │   └── SaveManager.cs       # Save/Load operations | 存档/读档操作
+│   ├── Events/                   # Event definitions (V3.0) | 事件定义 (V3.0)
+│   │   ├── GameEvents.cs        # Base event classes | 基础事件类
+│   │   ├── PlayerEvents.cs      # Player-related events | 玩家相关事件
+│   │   ├── CombatEvents.cs      # Combat events | 战斗事件
+│   │   └── InventoryEvents.cs   # Inventory events | 背包事件
 │   ├── Models/                   # Data models | 数据模型
 │   │   ├── GameModels.cs        # Game entities | 游戏实体
 │   │   └── JsonDataModels.cs    # JSON data structures | JSON数据结构
@@ -173,8 +187,13 @@ WinFormsApp1/
 │       ├── Items.json            # Item database | 物品数据库
 │       ├── Enemies.json          # Enemy definitions | 敌人定义
 │       └── Locations.json        # Game world locations | 游戏世界地点
+├── Tests/                        # Unit tests (V3.0) | 单元测试 (V3.0)
+│   ├── Unit/                    # Unit tests | 单元测试
+│   ├── Integration/             # Integration tests | 集成测试
+│   └── UI/                      # UI tests | UI测试
 ├── docs/                         # Documentation | 文档
-│   └── README.md                # This file | 本文件
+│   ├── README.md                # This file | 本文件
+│   └── REFACTORING_PLAN.md      # Event-driven refactoring plan | 事件驱动重构计划
 └── WinFormsApp1.csproj          # Project file | 项目文件
 ```
 
@@ -198,6 +217,35 @@ WinFormsApp1/
 - [ ] Quest system implementation | 任务系统实现
 - [ ] Advanced NPC interactions | 高级NPC交互
 
+### 🔄 **Version 3.0 - Event-Driven Architecture** | **版本 3.0 - 事件驱动架构** (PLANNED | 计划中)
+**📋 [Detailed Refactoring Plan](docs/REFACTORING_PLAN.md)** | **📋 [详细重构计划](docs/REFACTORING_PLAN.md)**
+
+#### Phase 1: Foundation | 第一阶段：基础
+- [ ] Implement EventManager (central event bus) | 实现EventManager（中央事件总线）
+- [ ] Create base manager classes and interfaces | 创建基础管理器类和接口
+- [ ] Extract GameManager from GameEngine | 从GameEngine提取GameManager
+- [ ] Implement PlayerManager for character progression | 实现PlayerManager用于角色进度
+- [ ] Set up dependency injection container | 设置依赖注入容器
+
+#### Phase 2: Core Managers | 第二阶段：核心管理器
+- [ ] Implement CombatManager for battle logic | 实现CombatManager用于战斗逻辑
+- [ ] Create InventoryManager for item operations | 创建InventoryManager用于物品操作
+- [ ] Build LocationManager for world navigation | 构建LocationManager用于世界导航
+- [ ] Develop SkillManager for skill tree logic | 开发SkillManager用于技能树逻辑
+- [ ] Refactor GameEngine to use managers | 重构GameEngine使用管理器
+
+#### Phase 3: UI Refactoring | 第三阶段：UI重构
+- [ ] Update all forms to use event-driven architecture | 更新所有表单使用事件驱动架构
+- [ ] Remove direct GameEngine dependencies from UI | 移除UI对GameEngine的直接依赖
+- [ ] Implement proper data binding with events | 实现事件的适当数据绑定
+- [ ] Enhance custom controls for event handling | 增强自定义控件的事件处理
+
+#### Phase 4: Advanced Features | 第四阶段：高级功能
+- [ ] Add event filtering and routing | 添加事件过滤和路由
+- [ ] Implement event history and replay | 实现事件历史和重放
+- [ ] Create plugin architecture | 创建插件架构
+- [ ] Add performance monitoring | 添加性能监控
+
 ### 📋 Planned Features | 计划功能
 - [ ] Multiplayer support | 多人游戏支持
 - [ ] Plugin system for mods | 模组插件系统
@@ -217,8 +265,9 @@ WinFormsApp1/
 
 ### Architecture Principles | 架构原则
 - **Separation of Concerns** | **关注点分离**: UI, game logic, and data are separate | UI、游戏逻辑和数据分离
-- **Event-Driven Design** | **事件驱动设计**: Custom controls communicate via events | 自定义控件通过事件通信
+- **Event-Driven Design** | **事件驱动设计**: Managers communicate via events (V3.0) | 管理器通过事件通信 (V3.0)
 - **Data-Driven Content** | **数据驱动内容**: Game content defined in JSON files | 游戏内容在JSON文件中定义
+- **Dependency Injection** | **依赖注入**: Loose coupling through DI container (V3.0) | 通过DI容器松耦合 (V3.0)
 
 ### Contributing | 贡献
 1. **Fork the repository** | **分叉仓库**
@@ -243,6 +292,7 @@ WinFormsApp1/
 - **Asset Editor** | **资源编辑器**: Visual tool for content creation | 内容创建的可视化工具
 - **Custom Skills** | **自定义技能**: Add new abilities and effects | 添加新能力和效果
 - **New Locations** | **新地点**: Expand the game world | 扩展游戏世界
+- **Event-Based Plugins** | **基于事件的插件**: Extend functionality via events (V3.0) | 通过事件扩展功能 (V3.0)
 
 ---
 
@@ -254,11 +304,28 @@ WinFormsApp1/
 - **System.Text.Json** for data serialization | **System.Text.Json** 用于数据序列化
 - **TreeView** for hierarchical data display | **TreeView** 用于分层数据显示
 - **Custom UserControls** for modular UI | **自定义用户控件** 用于模块化UI
+- **Event-Driven Architecture** (V3.0) | **事件驱动架构** (V3.0)
+- **Dependency Injection** (V3.0) | **依赖注入** (V3.0)
 
 ### Performance | 性能
 - **Memory Efficient** | **内存高效**: Optimized for minimal resource usage | 优化最小资源使用
 - **Fast Loading** | **快速加载**: JSON data cached for performance | JSON数据缓存以提高性能
 - **Responsive UI** | **响应式UI**: Async operations prevent blocking | 异步操作防止阻塞
+- **Event Optimization** | **事件优化**: Efficient event routing and filtering (V3.0) | 高效的事件路由和过滤 (V3.0)
+
+---
+
+## 📚 Documentation | 文档
+
+### Available Documents | 可用文档
+- **[README.md](docs/README.md)** | **[README.md](docs/README.md)**: Main project documentation | 主要项目文档
+- **[REFACTORING_PLAN.md](docs/REFACTORING_PLAN.md)** | **[REFACTORING_PLAN.md](docs/REFACTORING_PLAN.md)**: Event-driven architecture migration plan | 事件驱动架构迁移计划
+- **[REFACTORING_PROGRESS.md](docs/REFACTORING_PROGRESS.md)** | **[REFACTORING_PROGRESS.md](docs/REFACTORING_PROGRESS.md)**: Progress tracking for V3.0 refactoring | V3.0重构进度跟踪
+
+### Upcoming Documentation | 即将推出的文档
+- **API Reference** | **API参考**: Complete manager and event documentation | 完整的管理器和事件文档
+- **Plugin Development Guide** | **插件开发指南**: How to create mods and extensions | 如何创建模组和扩展
+- **Event System Guide** | **事件系统指南**: Working with the event-driven architecture | 使用事件驱动架构
 
 ---
 
