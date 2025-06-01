@@ -251,6 +251,7 @@ namespace WinFormsApp1
         Weapon,
         Armor,
         Potion,
+        Consumable,
         Misc,
         Key,
         Quest
@@ -285,6 +286,7 @@ namespace WinFormsApp1
 
     public enum EquipmentSlot
     {
+        None,
         Weapon,
         Armor,
         Shield,
