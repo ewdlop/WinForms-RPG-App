@@ -18,7 +18,9 @@ namespace WinFormsApp1.Managers
 
         public override string ManagerName => "LocationManager";
         public Location CurrentLocation => _currentLocation;
+        public string CurrentLocationKey => _currentLocation?.Key ?? "";
         public Dictionary<string, Location> AllLocations => new Dictionary<string, Location>(_allLocations);
+        public Dictionary<string, Location> Locations => AllLocations; // Alias for AllLocations
         public Player CurrentPlayer => _currentPlayer;
 
         public LocationManager(IEventManager eventManager, IInventoryManager inventoryManager) : base(eventManager)

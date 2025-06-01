@@ -527,4 +527,33 @@
 
 *Last Updated: December 31, 2024*  
 *Document Version: 1.4*  
-*Next Review Date: January 7, 2025* 
+*Next Review Date: January 7, 2025*
+
+### Dependency Injection Migration
+- **Status**: ✅ Complete (Migrated to .NET Generic Host)
+- **Files Created**:
+  - `src/Extensions/ServiceCollectionExtensions.cs` - Service registration
+  - Updated `Program.cs` - .NET Generic Host configuration with direct WinForms startup
+- **Files Removed**:
+  - `src/Managers/GameServiceContainer.cs` - Replaced with .NET Generic Host
+  - `src/Services/WinFormsHostedService.cs` - Removed IHostedService pattern
+
+**Key Achievements**:
+- ✅ Migrated from custom GameServiceContainer to .NET Generic Host
+- ✅ Direct WinForms application startup in Program.cs (no IHostedService)
+- ✅ Proper service lifetime management (Singleton, Transient)
+- ✅ Comprehensive logging configuration with Microsoft.Extensions.Logging
+- ✅ Manager initialization with proper dependency order
+- ✅ Added Microsoft.Extensions.Hosting, Logging, and Configuration packages
+- ✅ Proper service registration with extension methods
+- ✅ All forms now use dependency injection constructors
+- ✅ Build successful with 0 errors, 342 warnings (nullable references)
+- ✅ Application starts and runs correctly
+
+**Technical Implementation**:
+- **Service Registration**: Extension methods in ServiceCollectionExtensions
+- **Manager Lifecycle**: Singleton pattern for all managers with proper initialization
+- **Form Lifecycle**: Transient pattern for forms with dependency injection
+- **Logging**: Structured logging with Microsoft.Extensions.Logging
+- **Configuration**: Extensible configuration system ready for future enhancements
+- **Error Handling**: Comprehensive exception handling and logging 

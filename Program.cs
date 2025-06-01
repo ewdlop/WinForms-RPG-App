@@ -1,64 +1,112 @@
-using WinFormsApp1.Managers;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using WinFormsApp1.Extensions;
 using WinFormsApp1.Interfaces;
 
 namespace WinFormsApp1
 {
+    /// <summary>
+    /// Simple class to use for logger type argument
+    /// </summary>
+    internal class ApplicationHost
+    {
+    }
+
     internal static class Program
     {
         /// <summary>
-        ///  The main entry point for the application.
+        /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
+            // Configure WinForms
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
-            // Initialize the event-driven architecture
-            var serviceContainer = InitializeServices();
-            
-            // Create and run the main form with dependency injection
-            var mainForm = new Form1(serviceContainer);
-            Application.Run(mainForm);
+            // Create and configure the host builder
+            var builder = Host.CreateApplicationBuilder(args);
+
+            // Configure services
+            builder.Services.AddGameServices();
+            builder.Services.AddGameLogging();
+            builder.Services.AddGameConfiguration();
+
+            // Configure additional host settings
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+            // Build the host
+            using var host = builder.Build();
+
+            try
+            {
+                // Get the logger
+                var logger = host.Services.GetRequiredService<ILogger<ApplicationHost>>();
+                logger.LogInformation("Starting Realm of Aethermoor application");
+
+                // Initialize all managers
+                InitializeManagers(host.Services, logger);
+
+                // Create and run the main form
+                using var scope = host.Services.CreateScope();
+                var mainForm = scope.ServiceProvider.GetRequiredService<Form1>();
+                
+                logger.LogInformation("Starting WinForms application");
+                Application.Run(mainForm);
+                
+                logger.LogInformation("WinForms application closed");
+            }
+            catch (Exception ex)
+            {
+                // Log any unhandled exceptions
+                var logger = host.Services.GetService<ILogger<ApplicationHost>>();
+                logger?.LogCritical(ex, "Application terminated unexpectedly");
+                throw;
+            }
         }
 
-        private static GameServiceContainer InitializeServices()
+        private static void InitializeManagers(IServiceProvider serviceProvider, ILogger logger)
         {
-            var serviceContainer = new GameServiceContainer();
+            try
+            {
+                logger.LogInformation("Initializing game managers...");
 
-            // Register core services
-            var eventManager = new EventManager();
-            serviceContainer.RegisterSingleton<IEventManager>(eventManager);
+                // Initialize managers in dependency order
+                var playerManager = serviceProvider.GetRequiredService<IPlayerManager>();
+                var gameManager = serviceProvider.GetRequiredService<IGameManager>();
+                var combatManager = serviceProvider.GetRequiredService<ICombatManager>();
+                var inventoryManager = serviceProvider.GetRequiredService<IInventoryManager>();
+                var locationManager = serviceProvider.GetRequiredService<ILocationManager>();
+                var skillManager = serviceProvider.GetRequiredService<ISkillManager>();
 
-            // Register managers in dependency order
-            var playerManager = new PlayerManager(eventManager);
-            serviceContainer.RegisterSingleton<IPlayerManager>(playerManager);
+                // Initialize all managers
+                if (playerManager is IBaseManager playerBaseManager)
+                    playerBaseManager.Initialize();
 
-            var gameManager = new GameManager(eventManager, playerManager);
-            serviceContainer.RegisterSingleton<IGameManager>(gameManager);
+                if (gameManager is IBaseManager gameBaseManager)
+                    gameBaseManager.Initialize();
 
-            var combatManager = new CombatManager(eventManager, playerManager);
-            serviceContainer.RegisterSingleton<ICombatManager>(combatManager);
+                if (combatManager is IBaseManager combatBaseManager)
+                    combatBaseManager.Initialize();
 
-            var inventoryManager = new InventoryManager(eventManager, playerManager);
-            serviceContainer.RegisterSingleton<IInventoryManager>(inventoryManager);
+                if (inventoryManager is IBaseManager inventoryBaseManager)
+                    inventoryBaseManager.Initialize();
 
-            var locationManager = new LocationManager(eventManager, inventoryManager);
-            serviceContainer.RegisterSingleton<ILocationManager>(locationManager);
+                if (locationManager is IBaseManager locationBaseManager)
+                    locationBaseManager.Initialize();
 
-            var skillManager = new SkillManager(eventManager, playerManager);
-            serviceContainer.RegisterSingleton<ISkillManager>(skillManager);
+                if (skillManager is IBaseManager skillBaseManager)
+                    skillBaseManager.Initialize();
 
-            // Initialize all managers
-            playerManager.Initialize();
-            gameManager.Initialize();
-            combatManager.Initialize();
-            inventoryManager.Initialize();
-            locationManager.Initialize();
-            skillManager.Initialize();
-
-            return serviceContainer;
+                logger.LogInformation("All game managers initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error initializing game managers");
+                throw;
+            }
         }
     }
 }

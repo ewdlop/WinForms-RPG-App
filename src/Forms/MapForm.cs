@@ -4,24 +4,23 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using WinFormsApp1.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace WinFormsApp1
 {
     public partial class MapForm : Form
     {
-        private readonly Dictionary<string, Location> locations;
-        private readonly string currentLocationKey;
-        private readonly ILocationManager locationManager;
+        private readonly ILocationManager _locationManager;
+        private readonly ILogger<MapForm> _logger;
         private Panel mapPanel;
         private Dictionary<string, Rectangle> locationRects;
         private Dictionary<string, Point> locationPositions;
         private ToolTip toolTip;
 
-        public MapForm(Dictionary<string, Location> locations, string currentLocationKey, ILocationManager locationManager)
+        public MapForm(ILocationManager locationManager, ILogger<MapForm> logger)
         {
-            this.locations = locations;
-            this.currentLocationKey = currentLocationKey;
-            this.locationManager = locationManager;
+            _locationManager = locationManager;
+            _logger = logger;
             this.locationRects = new Dictionary<string, Rectangle>();
             this.locationPositions = new Dictionary<string, Point>();
             this.toolTip = new ToolTip();
@@ -208,7 +207,7 @@ namespace WinFormsApp1
 
                 // Determine color based on location status
                 Color locationColor;
-                if (locationKey == currentLocationKey)
+                if (locationKey == _locationManager.CurrentLocationKey)
                 {
                     locationColor = Color.Red;
                 }
@@ -229,9 +228,9 @@ namespace WinFormsApp1
                 g.DrawRectangle(Pens.Black, rect);
 
                 // Draw location name
-                if (locations.ContainsKey(locationKey))
+                if (_locationManager.Locations.ContainsKey(locationKey))
                 {
-                    string locationName = locations[locationKey].Name;
+                    string locationName = _locationManager.Locations[locationKey].Name;
                     using (Font font = new Font("Arial", 8, FontStyle.Bold))
                     {
                         SizeF textSize = g.MeasureString(locationName, font);
@@ -244,13 +243,13 @@ namespace WinFormsApp1
                 }
 
                 // Draw enemies indicator
-                if (locations.ContainsKey(locationKey) && locations[locationKey].Enemies.Any())
+                if (_locationManager.Locations.ContainsKey(locationKey) && _locationManager.Locations[locationKey].Enemies.Any())
                 {
                     g.FillEllipse(Brushes.Red, rect.Right - 10, rect.Top, 8, 8);
                 }
 
                 // Draw items indicator
-                if (locations.ContainsKey(locationKey) && locations[locationKey].Items.Any())
+                if (_locationManager.Locations.ContainsKey(locationKey) && _locationManager.Locations[locationKey].Items.Any())
                 {
                     g.FillEllipse(Brushes.Gold, rect.Left + 2, rect.Top, 8, 8);
                 }
@@ -261,7 +260,7 @@ namespace WinFormsApp1
         {
             using (Pen connectionPen = new Pen(Color.Brown, 2))
             {
-                foreach (var kvp in locations)
+                foreach (var kvp in _locationManager.Locations)
                 {
                     string fromKey = kvp.Key;
                     Location fromLocation = kvp.Value;
@@ -325,7 +324,7 @@ namespace WinFormsApp1
         {
             // For now, assume all locations except current are visited
             // In a real implementation, you'd track this in the game state
-            return locationKey != currentLocationKey;
+            return locationKey != _locationManager.CurrentLocationKey;
         }
 
         private void MapPanel_MouseClick(object sender, MouseEventArgs e)
@@ -350,7 +349,7 @@ namespace WinFormsApp1
             if (hoveredLocation != null)
             {
                 mapPanel.Cursor = Cursors.Hand;
-                toolTip.SetToolTip(mapPanel, locations[hoveredLocation].Name);
+                toolTip.SetToolTip(mapPanel, _locationManager.Locations[hoveredLocation].Name);
             }
             else
             {
@@ -373,9 +372,9 @@ namespace WinFormsApp1
 
         private void ShowLocationInfo(string locationKey)
         {
-            if (locations.ContainsKey(locationKey))
+            if (_locationManager.Locations.ContainsKey(locationKey))
             {
-                Location location = locations[locationKey];
+                Location location = _locationManager.Locations[locationKey];
                 string info = $"Location: {location.Name}\n\n";
                 info += $"Description: {location.Description}\n\n";
 
@@ -415,7 +414,7 @@ namespace WinFormsApp1
 
         private void TravelToLocation(string locationKey)
         {
-            if (locationKey == currentLocationKey)
+            if (locationKey == _locationManager.CurrentLocationKey)
             {
                 MessageBox.Show("You are already at this location!", "Travel", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -423,14 +422,14 @@ namespace WinFormsApp1
             }
 
             // Check if location is accessible from current location
-            if (locations.ContainsKey(currentLocationKey))
+            if (_locationManager.Locations.ContainsKey(_locationManager.CurrentLocationKey))
             {
-                var currentLocation = locations[currentLocationKey];
+                var currentLocation = _locationManager.Locations[_locationManager.CurrentLocationKey];
                 bool canTravel = currentLocation.Exits.ContainsValue(locationKey);
 
                 if (canTravel)
                 {
-                    var result = MessageBox.Show($"Travel to {locations[locationKey].Name}?", 
+                    var result = MessageBox.Show($"Travel to {_locationManager.Locations[locationKey].Name}?", 
                         "Confirm Travel", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                     if (result == DialogResult.Yes)

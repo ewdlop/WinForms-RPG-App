@@ -3,13 +3,15 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using WinFormsApp1.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace WinFormsApp1
 {
     public partial class InventoryForm : Form
     {
-        private readonly Player player;
-        private readonly IInventoryManager inventoryManager;
+        private readonly IPlayerManager _playerManager;
+        private readonly IInventoryManager _inventoryManager;
+        private readonly ILogger<InventoryForm> _logger;
         
         // UI Controls
         private ListView itemListView;
@@ -22,10 +24,12 @@ namespace WinFormsApp1
         private Button dropButton;
         private Button closeButton;
 
-        public InventoryForm(Player player, IInventoryManager inventoryManager)
+        public InventoryForm(IPlayerManager playerManager, IInventoryManager inventoryManager, ILogger<InventoryForm> logger)
         {
-            this.player = player;
-            this.inventoryManager = inventoryManager;
+            _playerManager = playerManager;
+            _inventoryManager = inventoryManager;
+            _logger = logger;
+            
             InitializeComponent();
             LoadInventory();
         }
@@ -224,7 +228,7 @@ namespace WinFormsApp1
 
             Label goldLabel = new Label
             {
-                Text = $"Gold: {player.Gold}",
+                Text = $"Gold: {_playerManager.CurrentPlayer.Gold}",
                 Font = new Font("Arial", 10, FontStyle.Bold),
                 ForeColor = Color.Goldenrod,
                 AutoSize = true,
@@ -240,7 +244,7 @@ namespace WinFormsApp1
         {
             itemListView.Items.Clear();
 
-            var groupedItems = player.Inventory.GroupBy(item => item.Name).ToList();
+            var groupedItems = _playerManager.CurrentPlayer.Inventory.GroupBy(item => item.Name).ToList();
 
             foreach (var group in groupedItems)
             {
@@ -381,11 +385,11 @@ namespace WinFormsApp1
         {
             if (item.Type == ItemType.Potion)
             {
-                int oldHealth = player.Health;
-                player.Health = Math.Min(player.MaxHealth, player.Health + item.Value);
-                int healedAmount = player.Health - oldHealth;
+                int oldHealth = _playerManager.CurrentPlayer.Health;
+                _playerManager.CurrentPlayer.Health = Math.Min(_playerManager.CurrentPlayer.MaxHealth, _playerManager.CurrentPlayer.Health + item.Value);
+                int healedAmount = _playerManager.CurrentPlayer.Health - oldHealth;
 
-                player.Inventory.Remove(item);
+                _playerManager.CurrentPlayer.Inventory.Remove(item);
                 LoadInventory();
                 ClearItemDetails();
                 DisableActionButtons();
@@ -399,24 +403,24 @@ namespace WinFormsApp1
         {
             if (item.Type == ItemType.Weapon)
             {
-                if (player.EquippedWeapon != null)
+                if (_playerManager.CurrentPlayer.EquippedWeapon != null)
                 {
-                    player.Inventory.Add(player.EquippedWeapon);
+                    _playerManager.CurrentPlayer.Inventory.Add(_playerManager.CurrentPlayer.EquippedWeapon);
                 }
-                player.EquippedWeapon = item;
-                player.Inventory.Remove(item);
+                _playerManager.CurrentPlayer.EquippedWeapon = item;
+                _playerManager.CurrentPlayer.Inventory.Remove(item);
                 
                 MessageBox.Show($"You equipped {item.Name}!", "Item Equipped", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else if (item.Type == ItemType.Armor)
             {
-                if (player.EquippedArmor != null)
+                if (_playerManager.CurrentPlayer.EquippedArmor != null)
                 {
-                    player.Inventory.Add(player.EquippedArmor);
+                    _playerManager.CurrentPlayer.Inventory.Add(_playerManager.CurrentPlayer.EquippedArmor);
                 }
-                player.EquippedArmor = item;
-                player.Inventory.Remove(item);
+                _playerManager.CurrentPlayer.EquippedArmor = item;
+                _playerManager.CurrentPlayer.Inventory.Remove(item);
                 
                 MessageBox.Show($"You equipped {item.Name}!", "Item Equipped", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -434,7 +438,7 @@ namespace WinFormsApp1
 
             if (result == DialogResult.Yes)
             {
-                player.Inventory.Remove(item);
+                _playerManager.CurrentPlayer.Inventory.Remove(item);
                 LoadInventory();
                 ClearItemDetails();
                 DisableActionButtons();

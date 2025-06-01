@@ -7,6 +7,8 @@ using WinFormsApp1.Controls;
 using WinFormsApp1.Interfaces;
 using WinFormsApp1.Events;
 using WinFormsApp1.Managers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace WinFormsApp1
 {
@@ -24,8 +26,13 @@ namespace WinFormsApp1
         private QuickActionsControl quickActionsControl;
         private MiniMapControl miniMapControl;
 
-        // Event-driven architecture services
-        private readonly GameServiceContainer _serviceContainer;
+        // Collections for enabling/disabling game controls
+        private List<Control> gameRequiredControls;
+        private List<ToolStripItem> gameRequiredMenuItems;
+        private List<ToolStripItem> gameRequiredToolbarItems;
+
+        // Manager dependencies
+        private readonly IServiceProvider _serviceProvider;
         private readonly IEventManager _eventManager;
         private readonly IGameManager _gameManager;
         private readonly IPlayerManager _playerManager;
@@ -33,28 +40,30 @@ namespace WinFormsApp1
         private readonly IInventoryManager _inventoryManager;
         private readonly ILocationManager _locationManager;
         private readonly ISkillManager _skillManager;
+        private readonly ILogger<Form1> _logger;
 
-        // UI elements that should be disabled until game starts
-        private List<Control> gameRequiredControls;
-        private List<ToolStripItem> gameRequiredMenuItems;
-        private List<ToolStripItem> gameRequiredToolbarItems;
-
-        public Form1(GameServiceContainer serviceContainer)
+        public Form1(IServiceProvider serviceProvider)
         {
-            _serviceContainer = serviceContainer ?? throw new ArgumentNullException(nameof(serviceContainer));
+            _serviceProvider = serviceProvider;
             
-            // Get services from container
-            _eventManager = _serviceContainer.GetService<IEventManager>();
-            _gameManager = _serviceContainer.GetService<IGameManager>();
-            _playerManager = _serviceContainer.GetService<IPlayerManager>();
-            _combatManager = _serviceContainer.GetService<ICombatManager>();
-            _inventoryManager = _serviceContainer.GetService<IInventoryManager>();
-            _locationManager = _serviceContainer.GetService<ILocationManager>();
-            _skillManager = _serviceContainer.GetService<ISkillManager>();
+            // Get required services
+            _eventManager = serviceProvider.GetRequiredService<IEventManager>();
+            _gameManager = serviceProvider.GetRequiredService<IGameManager>();
+            _playerManager = serviceProvider.GetRequiredService<IPlayerManager>();
+            _combatManager = serviceProvider.GetRequiredService<ICombatManager>();
+            _inventoryManager = serviceProvider.GetRequiredService<IInventoryManager>();
+            _locationManager = serviceProvider.GetRequiredService<ILocationManager>();
+            _skillManager = serviceProvider.GetRequiredService<ISkillManager>();
+            _logger = serviceProvider.GetRequiredService<ILogger<Form1>>();
+
+            _logger.LogInformation("Initializing Form1 with dependency injection");
 
             InitializeComponent();
-            InitializeGameUI();
+            InitializeGameUI(); // Initialize the UI before subscribing to events
             SubscribeToEvents();
+            SetGameControlsEnabled(false); // Disable until game starts
+
+            _logger.LogInformation("Form1 initialized successfully");
         }
 
         private void SubscribeToEvents()
@@ -168,35 +177,42 @@ namespace WinFormsApp1
         private void SetGameControlsEnabled(bool enabled)
         {
             // Find and manage toolbar items
-            foreach (ToolStripItem item in toolStrip.Items)
+            if (toolStrip != null)
             {
-                if (item.Text == "Save" || item.Text == "Load" || item.Text == "Inventory" || item.Text == "Map" || item.Text == "Skills")
+                foreach (ToolStripItem item in toolStrip.Items)
                 {
-                    item.Enabled = enabled;
+                    if (item.Text == "Save" || item.Text == "Load" || item.Text == "Inventory" || item.Text == "Map" || item.Text == "Skills")
+                    {
+                        item.Enabled = enabled;
+                    }
                 }
             }
 
             // Find and manage menu items
-            foreach (ToolStripMenuItem mainMenu in menuStrip.Items)
+            if (menuStrip != null)
             {
-                if (mainMenu.Text.Contains("Character") || mainMenu.Text.Contains("World"))
+                foreach (ToolStripMenuItem mainMenu in menuStrip.Items)
                 {
-                    mainMenu.Enabled = enabled;
-                }
-                else if (mainMenu.Text.Contains("Game"))
-                {
-                    foreach (ToolStripItem subItem in mainMenu.DropDownItems)
+                    if (mainMenu.Text.Contains("Character") || mainMenu.Text.Contains("World"))
                     {
-                        if (subItem.Text.Contains("Save") || subItem.Text.Contains("Load"))
+                        mainMenu.Enabled = enabled;
+                    }
+                    else if (mainMenu.Text.Contains("Game"))
+                    {
+                        foreach (ToolStripItem subItem in mainMenu.DropDownItems)
                         {
-                            subItem.Enabled = enabled;
+                            if (subItem.Text.Contains("Save") || subItem.Text.Contains("Load"))
+                            {
+                                subItem.Enabled = enabled;
+                            }
                         }
                     }
                 }
             }
 
             // Manage custom controls
-            gameInputControl.InputEnabled = enabled;
+            if (gameInputControl != null)
+                gameInputControl.InputEnabled = enabled;
             quickActionsControl?.SetButtonsEnabled(enabled, "Stats", "Save", "Load");
             miniMapControl?.SetMapEnabled(enabled);
         }
@@ -218,7 +234,7 @@ namespace WinFormsApp1
             ToolStripMenuItem characterMenu = new ToolStripMenuItem("&Character");
             characterMenu.DropDownItems.Add("&Inventory", null, ShowInventory);
             characterMenu.DropDownItems.Add("&Stats", null, (s, e) => ShowCharacterStats());
-            characterMenu.DropDownItems.Add("S&kills", null, (s, e) => ShowSkillTree());
+            characterMenu.DropDownItems.Add("S&kills", null, (s, e) => ShowSkillTree(s, e));
             characterMenu.DropDownItems.Add("&Equipment", null, ShowEquipment);
 
             // World menu
@@ -300,7 +316,7 @@ namespace WinFormsApp1
                 DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
                 ToolTipText = "Open skill tree"
             };
-            skillsButton.Click += (s, e) => ShowSkillTree();
+            skillsButton.Click += (s, e) => ShowSkillTree(s, e);
 
             ToolStripSeparator separator2 = new ToolStripSeparator();
 
@@ -513,7 +529,7 @@ namespace WinFormsApp1
                 // This will be implemented when we have access to the player
                 try
                 {
-                    var inventoryForm = new InventoryForm(_playerManager.CurrentPlayer, _inventoryManager);
+                    var inventoryForm = _serviceProvider.GetRequiredService<InventoryForm>();
                     inventoryForm.ShowDialog();
                 }
                 catch
@@ -529,7 +545,7 @@ namespace WinFormsApp1
             {
                 try
                 {
-                    var mapForm = new MapForm(_locationManager.AllLocations, _locationManager.CurrentLocation?.Key ?? "", _locationManager);
+                    var mapForm = _serviceProvider.GetRequiredService<MapForm>();
                     mapForm.ShowDialog();
                 }
                 catch
@@ -1223,17 +1239,19 @@ namespace WinFormsApp1
             }
         }
 
-        private void ShowSkillTree()
+        private void ShowSkillTree(object sender, EventArgs e)
         {
-            var player = _playerManager.CurrentPlayer;
-            if (player != null)
+            if (_gameManager != null)
             {
-                var skillTreeForm = new SkillTreeForm(player, _skillManager);
-                skillTreeForm.ShowDialog();
-            }
-            else
-            {
-                DisplayText("No character loaded.", Color.Red);
+                try
+                {
+                    var skillTreeForm = _serviceProvider.GetRequiredService<SkillTreeForm>();
+                    skillTreeForm.ShowDialog();
+                }
+                catch
+                {
+                    DisplayText("Start a new game first!", Color.Red);
+                }
             }
         }
 

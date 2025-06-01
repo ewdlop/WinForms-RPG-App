@@ -3,19 +3,22 @@ using System.Drawing;
 using System.Windows.Forms;
 using WinFormsApp1.Controls;
 using WinFormsApp1.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace WinFormsApp1
 {
     public partial class SkillTreeForm : Form
     {
-        private readonly Player player;
-        private readonly ISkillManager skillManager;
+        private readonly IPlayerManager _playerManager;
+        private readonly ISkillManager _skillManager;
+        private readonly ILogger<SkillTreeForm> _logger;
         private SkillTreeControl skillTreeControl;
 
-        public SkillTreeForm(Player player, ISkillManager skillManager)
+        public SkillTreeForm(IPlayerManager playerManager, ISkillManager skillManager, ILogger<SkillTreeForm> logger)
         {
-            this.player = player;
-            this.skillManager = skillManager;
+            _playerManager = playerManager;
+            _skillManager = skillManager;
+            _logger = logger;
             InitializeComponent();
             LoadSkillTree();
         }
@@ -98,7 +101,7 @@ namespace WinFormsApp1
 
         private void LoadSkillTree()
         {
-            skillTreeControl.UpdateSkillTree(player);
+            skillTreeControl.UpdateSkillTree(_playerManager.CurrentPlayer);
         }
 
         private void SkillTreeControl_SkillLearned(object sender, SkillLearnedEventArgs e)
@@ -107,7 +110,7 @@ namespace WinFormsApp1
             // The UI will be updated through event handlers in the main form
             
             // Refresh the skill tree display
-            skillTreeControl.UpdateSkillTree(player);
+            skillTreeControl.UpdateSkillTree(_playerManager.CurrentPlayer);
         }
 
         private void ResetButton_Click(object sender, EventArgs e)
@@ -125,7 +128,7 @@ namespace WinFormsApp1
                     "Feature Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 
                 // Refresh the display
-                skillTreeControl.UpdateSkillTree(player);
+                skillTreeControl.UpdateSkillTree(_playerManager.CurrentPlayer);
             }
         }
     }

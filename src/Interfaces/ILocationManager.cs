@@ -13,9 +13,19 @@ namespace WinFormsApp1.Interfaces
         Location CurrentLocation { get; }
 
         /// <summary>
+        /// Key of the current location
+        /// </summary>
+        string CurrentLocationKey { get; }
+
+        /// <summary>
         /// All available locations in the world
         /// </summary>
         Dictionary<string, Location> AllLocations { get; }
+
+        /// <summary>
+        /// All available locations in the world (alias for AllLocations)
+        /// </summary>
+        Dictionary<string, Location> Locations { get; }
 
         /// <summary>
         /// Current player for location tracking
